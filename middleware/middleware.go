@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -24,7 +25,7 @@ func ValidationMiddlewareAdmins(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, err := r.Cookie("authorization")
+		cookie, err := r.Cookie("authentication")
 		if err != nil {
 			http.Error(w, "cookie not found , please login...", http.StatusBadRequest)
 			helpers.PrintErr(err, "cookie is not found...")
@@ -41,7 +42,7 @@ func ValidationMiddlewareAdmins(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if !claimsMap["isadmin"].(bool) {
-			http.Error(w,"this route can be only accessed by admins",http.StatusBadRequest)
+			http.Error(w, "this route can be only accessed by admins", http.StatusBadRequest)
 			return
 		}
 
@@ -54,11 +55,41 @@ func ValidationMiddlewareClients(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, err := r.Cookie("authorization")
+		var ctx = r.Context()
+
+		cookie, err := r.Cookie("authentication")
 		if err != nil {
 			http.Error(w, "cookie not found , please login...", http.StatusBadRequest)
 			helpers.PrintErr(err, "cookie is not found...")
 			return
+		}
+
+		projCookie, _ := r.Cookie("projectCookie")
+		compCookie, _ := r.Cookie("companyCookie")
+
+		if projCookie != nil {
+			projcookieVal := projCookie.Value
+			projclaimsMap, err := jwtvalidation.ValidateTokenforProject(projcookieVal, []byte(secret))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				helpers.PrintErr(err, "not logged into the project")
+				return
+			}
+			ctx = context.WithValue(ctx, "projectID", projclaimsMap["projectID"].(string))
+			ctx = context.WithValue(ctx, "projectRole", projclaimsMap["role"].(string))
+			ctx = context.WithValue(ctx, "projectPermission", projclaimsMap["permission"].(string))
+		}
+		if compCookie != nil {
+			compcookieVal := compCookie.Value
+			compclaimsMap, err := jwtvalidation.ValidateTokenforCompany(compcookieVal, []byte(secret))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				helpers.PrintErr(err, "not logged into the company")
+				return
+			}
+			ctx = context.WithValue(ctx, "companyID", compclaimsMap["companyID"].(string))
+			ctx = context.WithValue(ctx, "companyRole", compclaimsMap["role"].(string))
+			ctx = context.WithValue(ctx, "companyPermission", compclaimsMap["permission"].(string))
 		}
 
 		cookieVal := cookie.Value
@@ -70,12 +101,15 @@ func ValidationMiddlewareClients(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		if claimsMap["userID"].(string) == "" {
+		userID := claimsMap["userID"].(string)
+		if userID == "" {
 			http.Error(w, "the userID is not valid", http.StatusBadRequest)
 			helpers.PrintErr(err, "userID is not valid")
 			return
 		}
-		next(w, r)
+
+		ctx = context.WithValue(ctx, "userID", userID)
+		next(w, r.WithContext(ctx))
 	}
 
 }

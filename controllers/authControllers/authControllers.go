@@ -3,24 +3,11 @@ package authcontrollers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/authpb"
-	"github.com/joho/godotenv"
-)
-
-func init() {
-	if err := godotenv.Load(".env"); err != nil {
-		helpers.PrintErr(err, "the secret cannot be retrieved...")
-	}
-	secret = os.Getenv("secret")
-}
-
-var (
-	secret string
 )
 
 func (auth *AuthCtl) loginUser(w http.ResponseWriter, r *http.Request) {
@@ -40,20 +27,19 @@ func (auth *AuthCtl) loginUser(w http.ResponseWriter, r *http.Request) {
 	res, err := auth.Conn.LoginUser(r.Context(), &req)
 	if err != nil {
 		helpers.PrintErr(err, "error on loginUser")
-		http.Error(w, "error on login", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	jsondta, err := json.Marshal(res)
 	if err != nil {
 		helpers.PrintErr(err, "error on marshaling to json on login")
-		http.Error(w, "error on marshling to json", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	cookieString, err := jwtvalidation.GenerateJwt(res.UserID, res.IsAdmin, []byte(secret))
+	cookieString, err := jwtvalidation.GenerateJwt(res.UserID, res.IsAdmin, []byte(auth.Secret))
 	if err != nil {
-		http.Error(w, "there is a problem with loggin in please try again later", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		helpers.PrintErr(err, "cannot create jwt")
 		return
 	}
@@ -67,6 +53,30 @@ func (auth *AuthCtl) loginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
+
+	if companyCookie, _ := r.Cookie("companyCookie"); companyCookie != nil {
+		companyCookie = &http.Cookie{
+			Name:     "companyCookie",
+			Value:    "",
+			Expires:  time.Unix(0, 0),
+			Path:     "/",
+			HttpOnly: true,
+		}
+
+		http.SetCookie(w, companyCookie)
+	}
+
+	if projectCookie, _ := r.Cookie("projectCookie"); projectCookie != nil {
+		projectCookie = &http.Cookie{
+			Name:     "projectCookie",
+			Value:    "",
+			Expires:  time.Unix(0, 0),
+			Path:     "/",
+			HttpOnly: true,
+		}
+
+		http.SetCookie(w, projectCookie)
+	}
 
 	w.WriteHeader(http.StatusOK)
 
@@ -91,6 +101,30 @@ func (auth *AuthCtl) logoutUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
+
+	if companyCookie, _ := r.Cookie("companyCookie"); companyCookie != nil {
+		companyCookie = &http.Cookie{
+			Name:     "companyCookie",
+			Value:    "",
+			Expires:  time.Unix(0, 0),
+			Path:     "/",
+			HttpOnly: true,
+		}
+
+		http.SetCookie(w, companyCookie)
+	}
+
+	if projectCookie, _ := r.Cookie("projectCookie"); projectCookie != nil {
+		projectCookie = &http.Cookie{
+			Name:     "projectCookie",
+			Value:    "",
+			Expires:  time.Unix(0, 0),
+			Path:     "/",
+			HttpOnly: true,
+		}
+
+		http.SetCookie(w, projectCookie)
+	}
 
 	w.WriteHeader(http.StatusOK)
 

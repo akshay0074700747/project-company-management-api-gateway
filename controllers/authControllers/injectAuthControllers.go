@@ -7,12 +7,14 @@ import (
 )
 
 type AuthCtl struct {
-	Conn authpb.AuthServiceClient
+	Conn   authpb.AuthServiceClient
+	Secret string
 }
 
-func NewAuthCtl(conn *grpc.ClientConn) *AuthCtl {
+func NewAuthCtl(conn *grpc.ClientConn, secret string) *AuthCtl {
 	return &AuthCtl{
-		Conn: authpb.NewAuthServiceClient(conn),
+		Conn:   authpb.NewAuthServiceClient(conn),
+		Secret: secret,
 	}
 }
 
