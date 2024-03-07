@@ -25,6 +25,13 @@ func ValidationMiddlewareAdmins(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		defer func() {
+			if r := recover(); r != nil {
+				http.Error(w, "You do not have the authority to do this operation", http.StatusBadRequest)
+				return
+			}
+		}()
+
 		cookie, err := r.Cookie("authentication")
 		if err != nil {
 			http.Error(w, "cookie not found , please login...", http.StatusBadRequest)
@@ -55,6 +62,13 @@ func ValidationMiddlewareClients(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		defer func() {
+			if r := recover(); r != nil {
+				http.Error(w, "You do not have the authority to do this operation", http.StatusBadRequest)
+				return
+			}
+		}()
+
 		var ctx = r.Context()
 
 		cookie, err := r.Cookie("authentication")
@@ -75,6 +89,7 @@ func ValidationMiddlewareClients(next http.HandlerFunc) http.HandlerFunc {
 				helpers.PrintErr(err, "not logged into the project")
 				return
 			}
+			ctx = context.WithValue(ctx, "projectBool", true)
 			ctx = context.WithValue(ctx, "projectID", projclaimsMap["projectID"].(string))
 			ctx = context.WithValue(ctx, "projectRole", projclaimsMap["role"].(string))
 			ctx = context.WithValue(ctx, "projectPermission", projclaimsMap["permission"].(string))
@@ -87,6 +102,7 @@ func ValidationMiddlewareClients(next http.HandlerFunc) http.HandlerFunc {
 				helpers.PrintErr(err, "not logged into the company")
 				return
 			}
+			ctx = context.WithValue(ctx, "companyBool", true)
 			ctx = context.WithValue(ctx, "companyID", compclaimsMap["companyID"].(string))
 			ctx = context.WithValue(ctx, "companyRole", compclaimsMap["role"].(string))
 			ctx = context.WithValue(ctx, "companyPermission", compclaimsMap["permission"].(string))

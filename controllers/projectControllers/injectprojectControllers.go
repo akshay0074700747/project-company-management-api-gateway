@@ -12,7 +12,7 @@ import (
 type ProjectCtl struct {
 	Conn           projectpb.ProjectServiceClient
 	TaskAssignator *TaskProducer
-	Secret string
+	Secret         string
 }
 
 type TaskProducer struct {
@@ -44,11 +44,11 @@ func NewTaskProducer(topic string) *TaskProducer {
 	}
 }
 
-func NewProjectCtl(conn *grpc.ClientConn, taskAssignator *TaskProducer,secret string) *ProjectCtl {
+func NewProjectCtl(conn *grpc.ClientConn, taskAssignator *TaskProducer, secret string) *ProjectCtl {
 	return &ProjectCtl{
 		Conn:           projectpb.NewProjectServiceClient(conn),
 		TaskAssignator: taskAssignator,
-		Secret: secret,
+		Secret:         secret,
 	}
 }
 
@@ -60,13 +60,27 @@ func (proj *ProjectCtl) InjectProjectControllers(r *chi.Mux) {
 	r.Post("/project/members/tasks/assign", middleware.ValidationMiddlewareClients(proj.assignTasks))
 	r.Get("/project/details", middleware.ValidationMiddlewareClients(proj.projectDetails))
 	r.Get("/project/members", middleware.ValidationMiddlewareClients(proj.getProjectMembers))
-	r.Post("/project/login",middleware.ValidationMiddlewareClients(proj.LogintoProject))
-	r.Post("/project/member/statu/post",middleware.ValidationMiddlewareAdmins(proj.addMemberStatus))
-	r.Get("/project/tasks/get",middleware.ValidationMiddlewareClients(proj.getAssignedTasks))
-	r.Get("/project/members/progress",middleware.ValidationMiddlewareClients(proj.getProgressofMembers))
-	r.Get("/project/member/progress",middleware.ValidationMiddlewareClients(proj.getMemberProgress))
-	r.Get("/project/progress",middleware.ValidationMiddlewareClients(proj.getProjectProgress))
-	r.Post("/project/progress/non-technical/post",middleware.ValidationMiddlewareClients(proj.markProgressofNonTechnical))
-	r.Post("/project/task/statuses/post",middleware.ValidationMiddlewareAdmins(proj.addTaskStatuses))
-	r.Get("/company/projects/live",middleware.ValidationMiddlewareClients(proj.getLiveProjectsofCompany))
+	r.Post("/project/login", middleware.ValidationMiddlewareClients(proj.LogintoProject))
+	r.Post("/project/member/statu/post", middleware.ValidationMiddlewareAdmins(proj.addMemberStatus))
+	r.Get("/project/tasks/get", middleware.ValidationMiddlewareClients(proj.getAssignedTasks))
+	r.Get("/project/tasks/download", proj.downloadTask)
+	r.Get("/project/members/progress", middleware.ValidationMiddlewareClients(proj.getProgressofMembers))
+	r.Get("/project/member/progress", middleware.ValidationMiddlewareClients(proj.getMemberProgress))
+	r.Get("/project/progress", middleware.ValidationMiddlewareClients(proj.getProjectProgress))
+	r.Post("/project/progress/non-technical/post", middleware.ValidationMiddlewareClients(proj.markProgressofNonTechnical))
+	r.Post("/project/task/statuses/post", middleware.ValidationMiddlewareAdmins(proj.addTaskStatuses))
+	r.Get("/company/projects/live", middleware.ValidationMiddlewareClients(proj.getLiveProjectsofCompany))
+	r.Post("/project/logout", middleware.ValidationMiddlewareClients(proj.logoutFromProject))
+	r.Get("/project/members/completed",middleware.ValidationMiddlewareClients(proj.getCompletedMembers))
+	r.Get("/project/members/critical",middleware.ValidationMiddlewareClients(proj.getCriticalMembers))
+	r.Post("/project/issue/raise",middleware.ValidationMiddlewareClients(proj.raiseIssue))
+	r.Get("/project/member/issues",middleware.ValidationMiddlewareClients(proj.getIssuesofMember))
+	r.Get("/project/issues",middleware.ValidationMiddlewareClients(proj.getIssues))
+	r.Post("/project/task/rate",middleware.ValidationMiddlewareClients(proj.rateTask))
+	r.Get("/project/task/feedback",middleware.ValidationMiddlewareClients(proj.feedbackforTask))
+	r.Post("/project/task/deadline",middleware.ValidationMiddlewareClients(proj.requestforDeadlineExtension))
+	r.Get("/projects/task/extensions",middleware.ValidationMiddlewareClients(proj.getExtensionRequests))
+	r.Post("/project/task/extensions/grant",middleware.ValidationMiddlewareClients(proj.grantExtension))
+	r.Post("/project/task/verify",middleware.ValidationMiddlewareClients(proj.verifyTaskCompletion))
+	r.Get("/project/verify/tasks",middleware.ValidationMiddlewareClients(proj.getverifiedTasks))
 }

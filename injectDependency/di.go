@@ -4,6 +4,7 @@ import (
 	"os"
 
 	authcontrollers "github.com/akshay0074700747/projectandCompany_management_api-gateway/controllers/authControllers"
+	chatcontrollers "github.com/akshay0074700747/projectandCompany_management_api-gateway/controllers/chatControllers"
 	clicontroller "github.com/akshay0074700747/projectandCompany_management_api-gateway/controllers/cli-controller"
 	companycontrollers "github.com/akshay0074700747/projectandCompany_management_api-gateway/controllers/companyControllers"
 	projectcontrollers "github.com/akshay0074700747/projectandCompany_management_api-gateway/controllers/projectControllers"
@@ -42,7 +43,8 @@ func Inject(r *chi.Mux) {
 	userCtl := usrcontrollers.NewUserserviceClient(userConn, secret)
 	taskAssignator := projectcontrollers.NewTaskProducer("taskTopic")
 	projectCtl := projectcontrollers.NewProjectCtl(projectConn, taskAssignator, secret)
-	companyCtl := companycontrollers.NewCompanyCtl(companyConn, secret)
+	jobAssignator := companycontrollers.NewJobProducer("jobTopic")
+	companyCtl := companycontrollers.NewCompanyCtl(companyConn, secret, jobAssignator)
 	authCtl := authcontrollers.NewAuthCtl(authConn, secret)
 	//
 	userCtl.InjectUserControllers(r)
@@ -52,4 +54,5 @@ func Inject(r *chi.Mux) {
 	clicontroller.InjectCliControllers(r)
 	snapShotCtl := snapshotcontrollers.NewSnapshotCtl("SnapshotTopic")
 	snapShotCtl.InjectSnapshotControllers(r)
+	chatcontrollers.InjectChatControllers(r)
 }
