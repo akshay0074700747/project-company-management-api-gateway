@@ -1380,6 +1380,7 @@ func (comp *CompanyCtl) resolveProblem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.CompanyID = r.Context().Value("companyID").(string)
+	req.ResolverID = r.Context().Value("resolverID").(string)
 
 	_, err := comp.Conn.ResolveProblem(context.TODO(), &req)
 	if err != nil {
@@ -1416,7 +1417,7 @@ func (comp *CompanyCtl) applyforLeave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.CompanyID = r.Context().Value("companyID").(string)
-
+	req.EmployeeID = r.Context().Value("userID").(string)
 	_, err := comp.Conn.ApplyForLeave(context.TODO(), &req)
 	if err != nil {
 		helpers.PrintErr(err, "error happened at ApplyForLeave")
@@ -1513,7 +1514,7 @@ func (comp *CompanyCtl) decideEmployeeLeave(w http.ResponseWriter, r *http.Reque
 	}
 
 	var res Responce
-	res.Message = "Granted or Revoked Leave Successfully"
+	res.Message = "Successfull"
 	res.Status = "Success"
 	res.StatusCode = http.StatusCreated
 
@@ -2073,7 +2074,48 @@ func (comp *CompanyCtl) getAllapplicationsofUser(w http.ResponseWriter, r *http.
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) getAssignedProblems(w http.ResponseWriter, r *http.Request) {
+
+	stream, err := comp.Conn.GetAssignedProblems(context.TODO(), &companypb.GetAssignedProblemsReq{
+		UserID:    r.Context().Value("userID").(string),
+		CompanyID: r.Context().Value("companyID").(string),
+	})
+	if err != nil {
+		helpers.PrintErr(err, "error happened at GetAssignedProblems")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res []*companypb.GetAssignedProblemsRes
+
+	for {
+		msg, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			helpers.PrintErr(err, "error happened at recieving from stream")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res = append(res, msg)
+	}
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 
 	w.Header().Set("Content-Type", "application/json")
 
