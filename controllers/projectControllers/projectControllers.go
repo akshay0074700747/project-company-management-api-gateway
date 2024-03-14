@@ -1282,3 +1282,265 @@ func (proj *ProjectCtl) getverifiedTasks(w http.ResponseWriter, r *http.Request)
 
 	w.Write(jsonDta)
 }
+
+func (proj *ProjectCtl) dropProject(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("projectPermission").(string)
+
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the permission to do this operation", http.StatusConflict)
+		return
+	}
+
+	var req projectpb.DropProjectReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat decoding to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err := proj.Conn.DropProject(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat DropProject")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Dropped Project Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (proj *ProjectCtl) terminateProjectmembers(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("projectPermission").(string)
+
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the permission to do this operation", http.StatusConflict)
+		return
+	}
+
+	var req projectpb.TerminateProjectMembersReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat decoding to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.ProjectID = r.Context().Value("projectID").(string)
+
+	_, err := proj.Conn.TerminateProjectMembers(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat TerminateProjectMembers")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Terminated Project member Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (proj *ProjectCtl) updateProjectDetails(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("projectPermission").(string)
+
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the permission to do this operation", http.StatusConflict)
+		return
+	}
+
+	var req projectpb.EditProjectDetailsReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat decoding to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.ProjectID = r.Context().Value("projectID").(string)
+
+	_, err := proj.Conn.EditProjectDetails(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat EditProjectDetails")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Update Project Details Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (proj *ProjectCtl) EditMember(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("projectPermission").(string)
+
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the permission to do this operation", http.StatusConflict)
+		return
+	}
+
+	var req projectpb.EditMemberReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat decoding to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.ProjectID = r.Context().Value("projectID").(string)
+
+	_, err := proj.Conn.EditMember(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat EditMember")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Updated Project member Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (proj *ProjectCtl) editFeedback(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("projectPermission").(string)
+
+	if permission != "ROOT" && permission != "SEMI-ROOT" {
+		http.Error(w, "you dont have the permission to do this operation", http.StatusConflict)
+		return
+	}
+
+	var req projectpb.EditFeedbackReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat decoding to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.ProjectID = r.Context().Value("projectID").(string)
+
+	_, err := proj.Conn.EditFeedback(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat EditFeedback")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Updated feedback Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (proj *ProjectCtl) deleteFeedback(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("projectPermission").(string)
+
+	if permission != "ROOT" && permission != "SEMI-ROOT" {
+		http.Error(w, "you dont have the permission to do this operation", http.StatusConflict)
+		return
+	}
+
+	var req projectpb.DeleteFeedbackReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat decoding to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.ProjectID = r.Context().Value("projectID").(string)
+
+	_, err := proj.Conn.DeleteFeedback(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat DeleteFeedback")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Deleted feedback Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}

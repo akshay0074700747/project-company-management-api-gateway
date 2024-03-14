@@ -2121,3 +2121,411 @@ func (comp *CompanyCtl) getAssignedProblems(w http.ResponseWriter, r *http.Reque
 
 	w.Write(jsonDta)
 }
+
+func (comp *CompanyCtl) dropCompany(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.DropCompanyReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err := comp.Conn.DropCompany(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat DropCompany")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Dropped Company Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) editDetais(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.EditCompanyDetailsReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.CompanyID = r.Context().Value("companyID").(string)
+
+	_, err := comp.Conn.EditCompanyDetails(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat EditCompanyDetails")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Edited Company Detials Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) deleteCompanyEmployee(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.TerminateEmployeeReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.CompanyID = r.Context().Value("companyID").(string)
+
+	_, err := comp.Conn.TerminateEmployee(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat TerminateEmployee")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Terminated Employee Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) editCompanyEmployees(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" && permission != "SEMI-ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.EditCompanyEmployeesReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.CompanyID = r.Context().Value("companyID").(string)
+
+	_, err := comp.Conn.EditCompanyEmployees(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat EditCompanyEmployees")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Edited Company employee Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) deleteProblem(w http.ResponseWriter, r *http.Request) {
+
+	var req companypb.DeleteProblemReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err := comp.Conn.DeleteProblem(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat DeleteProblem")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "deleted problem Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) editproblems(w http.ResponseWriter, r *http.Request) {
+
+	var req companypb.EditProblemReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err := comp.Conn.EditProblem(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat EditProblem")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "edited problem Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) dropClient(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.DropClientFromCompanyReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.CompanyID = r.Context().Value("companyID").(string)
+
+	_, err := comp.Conn.DropClientFromCompany(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat DropClientFromCompany")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "dropped Company Client Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) editCompanyPolicies(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.UpdateCompanyPoliciesReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.CompanyID = r.Context().Value("companyID").(string)
+
+	_, err := comp.Conn.UpdateCompanyPolicies(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat UpdateCompanyPolicies")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "updated company policies Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) deleteJob(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" && permission != "SEMI-ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.DeleteJobReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err := comp.Conn.DeleteJob(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat DeleteJob")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "deleted job Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (comp *CompanyCtl) updateJob(w http.ResponseWriter, r *http.Request) {
+
+	permission := r.Context().Value("companyPermission").(string)
+	if permission != "ROOT" && permission != "SEMI-ROOT" {
+		http.Error(w, "you dont have the neccessary permissions to do this operation", http.StatusInternalServerError)
+		return
+	}
+
+	var req companypb.UpdateJobReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "error happenedat parsing to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err := comp.Conn.UpdateJob(context.TODO(), &req)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat UpdateJob")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "updated job Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}

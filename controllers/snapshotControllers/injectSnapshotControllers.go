@@ -36,4 +36,5 @@ func NewSnapshotCtl(topic string) *SnapshotCtl {
 
 func (snap *SnapshotCtl) InjectSnapshotControllers(r *chi.Mux) {
 	r.Post("/snapshots/push", snap.pushSnapshots)
+	r.Get("/snapshots/pull",snap.pullSnapshot)
 }

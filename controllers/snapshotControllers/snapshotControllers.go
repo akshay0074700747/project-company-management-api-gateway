@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-
+	"fmt"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -100,5 +100,13 @@ func (snap *SnapshotCtl) pushSnapshots(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	w.Write([]byte("pushed successfully..."))
+
+}
+
+func (snap *SnapshotCtl) pullSnapshot(w http.ResponseWriter, r *http.Request) {
+
+	url := fmt.Sprintf("http://localhost:50005/snapshots/pull?commitID=%s",r.URL.Query().Get("commitID"))
+
+	http.Redirect(w, r, url, http.StatusFound)
 
 }

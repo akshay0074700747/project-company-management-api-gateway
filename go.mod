@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/akshay0074700747/projectandCompany_management_protofiles v0.0.0-20240308094245-f73c105d7b51 // indirect
+	github.com/akshay0074700747/projectandCompany_management_protofiles v0.0.0-20240313050234-24ba5a4a64b0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.49.0
@@ -36,7 +36,7 @@ require (
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240308144416-29370a3891b7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311173647-c811ad7063a7 // indirect
 	google.golang.org/grpc v1.62.1 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )

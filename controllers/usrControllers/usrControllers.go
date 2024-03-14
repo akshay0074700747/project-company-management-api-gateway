@@ -14,6 +14,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+type Responce struct {
+	Message    string `json:"Message"`
+	StatusCode int    `json:"StatusCode"`
+	Status     string `json:"Status"`
+}
+
 func (usr *UserCtl) signupUser(w http.ResponseWriter, r *http.Request) {
 	if cookie, _ := r.Cookie("authentication"); cookie != nil {
 		http.Error(w, "you are already logged in...", http.StatusConflict)
@@ -248,4 +254,111 @@ func (usr *UserCtl) showUserDetails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	w.Write(jsondta)
+}
+
+func (usr *UserCtl) editStatus(w http.ResponseWriter, r *http.Request) {
+
+	var req userpb.EditStatusReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "cannot parse the AddRoleReq req")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.UserID = r.Context().Value("userID").(string)
+
+	_, err := usr.Conn.EditStatus(context.TODO(), &req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		helpers.PrintErr(err, "error at EditStatus")
+		return
+	}
+
+	var res Responce
+	res.Message = "Edited status Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+
+}
+
+func (usr *UserCtl) updateDetails(w http.ResponseWriter, r *http.Request) {
+
+	var req userpb.UpdateUserDetailsReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.PrintErr(err, "cannot parse the EditStatusReq req")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.UserID = r.Context().Value("userID").(string)
+
+	_, err := usr.Conn.UpdateUserDetails(context.TODO(), &req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		helpers.PrintErr(err, "error at UpdateUserDetails")
+		return
+	}
+
+	var res Responce
+	res.Message = "Edited user details Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
+}
+
+func (usr *UserCtl) getSubscriptionPlans(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/subscription/plan", http.StatusFound)
+}
+
+func (usr *UserCtl) addSubscription(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/subscription/plan/add", http.StatusFound)
+}
+
+func (usr *UserCtl) subscribe(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/subscription/plan/subscribe", http.StatusFound)
+}
+
+func (usr *UserCtl) getSubscriptions(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/subscriptions", http.StatusFound)
+}
+
+func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/subscription/plan/subscribe/order/pay", http.StatusFound)
+}
+
+func (usr *UserCtl) verifyPayment(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/verify/payment", http.StatusFound)
+}
+
+func (usr *UserCtl) verifiedPayment(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/payment/verified", http.StatusFound)
+}
+
+func (usr *UserCtl) getAllPayments(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:50007/payments", http.StatusFound)
 }
