@@ -14,6 +14,7 @@ import (
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/projectpb"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/go-redis/redis/v8"
 )
 
 type TaskDta struct {
@@ -30,6 +31,65 @@ type Responce struct {
 	Message    string `json:"Message"`
 	StatusCode int    `json:"StatusCode"`
 	Status     string `json:"Status"`
+}
+
+func (proj *ProjectCtl) ProjectMiddleware(next http.HandlerFunc) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		projectID := r.Context().Value("projectID").(string)
+		userID := r.Context().Value("userID").(string)
+
+		var res []byte
+		if err := proj.Cache.GetDataFromCache(projectID+" "+userID, &res, context.TODO()); err != nil {
+			if err == redis.Nil {
+				check, err := proj.Conn.GetUserStat(context.TODO(), &projectpb.GetUserStatReq{
+					ProjectID: projectID,
+					UserID:    userID,
+				})
+				if err != nil {
+					helpers.PrintErr(err, "cannot GetUserStat")
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				resss, err := proj.Cache.Encode(check.IsAcceptable)
+				if err != nil {
+					helpers.PrintErr(err, "cannot encode")
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				if err = proj.Cache.CacheData(projectID+" "+userID, resss, time.Hour*48, context.TODO()); err != nil {
+					helpers.PrintErr(err, "cannot cache")
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				if !check.IsAcceptable {
+					http.Error(w, "you have no authority to access this route", http.StatusInternalServerError)
+					return
+				}
+
+				return
+
+			} else {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
+
+		var ress bool
+		if err := proj.Cache.Decode(res, &ress); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if !ress {
+			http.Error(w, "you are no longer a member of the project", http.StatusBadRequest)
+			return
+		}
+	}
 }
 
 func (proj *ProjectCtl) createProject(w http.ResponseWriter, r *http.Request) {

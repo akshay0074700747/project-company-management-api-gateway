@@ -14,6 +14,7 @@ import (
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/companypb"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/go-redis/redis/v8"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -22,6 +23,65 @@ type Responce struct {
 	Message    string `json:"Message"`
 	StatusCode int    `json:"StatusCode"`
 	Status     string `json:"Status"`
+}
+
+func (comp *CompanyCtl) CompanyMiddleware(next http.HandlerFunc) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		companyID := r.Context().Value("companyID").(string)
+		userID := r.Context().Value("userID").(string)
+
+		var res []byte
+		if err := comp.Cache.GetDataFromCache(companyID+" "+userID, &res, context.TODO()); err != nil {
+			if err == redis.Nil {
+				check, err := comp.Conn.GetUserStat(context.TODO(), &companypb.GetUserStatReq{
+					CompanyID: companyID,
+					UserID:    userID,
+				})
+				if err != nil {
+					helpers.PrintErr(err, "cannot GetUserStat")
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				resss,err := comp.Cache.Encode(check.IsAcceptable)
+				if err != nil {
+					helpers.PrintErr(err, "cannot encode")
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				if err = comp.Cache.CacheData(companyID+" "+userID,resss,time.Hour * 48,context.TODO()); err != nil {
+					helpers.PrintErr(err, "cannot cache")
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				if !check.IsAcceptable {
+					http.Error(w, "you have no authority to access this route", http.StatusInternalServerError)
+					return
+				}
+				
+				return
+
+			} else {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
+
+		var ress bool
+		if err := comp.Cache.Decode(res, &ress); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if !ress {
+			http.Error(w, "you are no longer a member of the company", http.StatusBadRequest)
+			return
+		}
+	}
 }
 
 func (comp *CompanyCtl) registerCompany(w http.ResponseWriter, r *http.Request) {

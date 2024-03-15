@@ -11,6 +11,7 @@ import (
 	snapshotcontrollers "github.com/akshay0074700747/projectandCompany_management_api-gateway/controllers/snapshotControllers"
 	usrcontrollers "github.com/akshay0074700747/projectandCompany_management_api-gateway/controllers/usrControllers"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
+	"github.com/akshay0074700747/projectandCompany_management_api-gateway/rediss"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 )
@@ -40,11 +41,13 @@ func Inject(r *chi.Mux) {
 		helpers.PrintErr(err, "cannot connect to auth-service")
 	}
 	//
-	userCtl := usrcontrollers.NewUserserviceClient(userConn, secret)
+	cache := rediss.NewCache(rediss.NewRedis())
+	//
+	userCtl := usrcontrollers.NewUserserviceClient(userConn, secret,cache,"Emailsender")
 	taskAssignator := projectcontrollers.NewTaskProducer("taskTopic")
-	projectCtl := projectcontrollers.NewProjectCtl(projectConn, taskAssignator, secret)
+	projectCtl := projectcontrollers.NewProjectCtl(projectConn, taskAssignator, secret,cache)
 	jobAssignator := companycontrollers.NewJobProducer("jobTopic")
-	companyCtl := companycontrollers.NewCompanyCtl(companyConn, secret, jobAssignator)
+	companyCtl := companycontrollers.NewCompanyCtl(companyConn, secret, jobAssignator,cache)
 	authCtl := authcontrollers.NewAuthCtl(authConn, secret)
 	//
 	userCtl.InjectUserControllers(r)

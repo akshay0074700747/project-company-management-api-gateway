@@ -11,6 +11,8 @@ import (
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/userpb"
+	"github.com/akshay0074700747/proto-files-for-microservices/pb"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -31,6 +33,78 @@ func (usr *UserCtl) signupUser(w http.ResponseWriter, r *http.Request) {
 		helpers.PrintErr(err, "cannot parse the signup req")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	if req.Otp == "" {
+
+		otp := helpers.SelectRandomintBetweenRange(100000,999999)
+
+		if err := usr.Cache.CacheData(req.Email,[]byte(strconv.Itoa(otp)),time.Minute * 1,context.TODO()); err != nil {
+			helpers.PrintErr(err,"error happened at saving otp")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		message := "Subject: OTP Verification\r\n" +
+		"\r\n" +
+		"Here is your otp,\r\n" + strconv.Itoa(otp) +
+		"\r\n"
+
+		email := pb.Email{
+			Reciever: req.Email,
+			Message:  message,
+		}
+		value, err := helpers.Serialize(&email)
+
+		err = usr.Producer.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: &usr.Topic, Partition: 0},
+			Value:          value,
+		}, usr.DeliveryChan)
+	
+		e := <-usr.DeliveryChan
+		m := e.(*kafka.Message)
+		if m.TopicPartition.Error != nil {
+			helpers.PrintErr(err, "error at delivery Chan")
+		} else {
+			helpers.PrintMsg("message delivered")
+		}
+
+		var res Responce
+		res.Message = "Otp Sent Successfully"
+		res.Status = "Success"
+		res.StatusCode = http.StatusOK
+	
+		jsonDta, err := json.Marshal(res)
+		if err != nil {
+			helpers.PrintErr(err, "error happenedat marshaling to json")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	
+		w.WriteHeader(http.StatusOK)
+	
+		w.Header().Set("Content-Type", "application/json")
+	
+		w.Write(jsonDta)
+	}else {
+		var res []byte
+		if err := usr.Cache.GetDataFromCache(req.Email,&res,context.TODO()); err != nil {
+			helpers.PrintErr(err, "there is a problem withb getting data from cache")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var otp string
+		if err := usr.Cache.Decode(res,&otp); err != nil {
+			helpers.PrintErr(err, "there is a problem withb decoding")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if otp != req.Otp {
+			http.Error(w, "the entered otp is not correct", http.StatusBadRequest)
+			return
+		}
 	}
 
 	res, err := usr.Conn.SignupUser(r.Context(), &req)

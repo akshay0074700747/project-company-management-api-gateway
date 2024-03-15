@@ -1,8 +1,11 @@
 package usrcontrollers
 
 import (
+	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/middleware"
+	"github.com/akshay0074700747/projectandCompany_management_api-gateway/rediss"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/userpb"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/go-chi/chi"
 	"google.golang.org/grpc"
 )
@@ -10,13 +13,34 @@ import (
 type UserCtl struct {
 	Conn   userpb.UserServiceClient
 	Secret string
+	Cache *rediss.Cache
+	Producer     *kafka.Producer
+	Topic        string
+	DeliveryChan chan kafka.Event
 }
 
-func NewUserserviceClient(conn *grpc.ClientConn, secret string) *UserCtl {
+func NewUserserviceClient(conn *grpc.ClientConn, secret string,cache *rediss.Cache,topic string) *UserCtl {
+
+	configMap := &kafka.ConfigMap{
+		"bootstrap.servers": "localhost:9092",
+		"client.id":         "email-producer",
+		"acks":              "all",
+	}
+
+	producer, err := kafka.NewProducer(configMap)
+	if err != nil {
+		helpers.PrintErr(err, "errror at creating porducer")
+	}
+
+	deliveryChan := make(chan kafka.Event)
 
 	return &UserCtl{
 		Conn:   userpb.NewUserServiceClient(conn),
 		Secret: secret,
+		Cache: cache,
+		Topic: topic,
+		Producer: producer,
+		DeliveryChan: deliveryChan,
 	}
 }
 
