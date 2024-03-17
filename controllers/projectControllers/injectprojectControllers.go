@@ -14,7 +14,7 @@ type ProjectCtl struct {
 	Conn           projectpb.ProjectServiceClient
 	TaskAssignator *TaskProducer
 	Secret         string
-	Cache *rediss.Cache
+	Cache          *rediss.Cache
 }
 
 type TaskProducer struct {
@@ -46,12 +46,12 @@ func NewTaskProducer(topic string) *TaskProducer {
 	}
 }
 
-func NewProjectCtl(conn *grpc.ClientConn, taskAssignator *TaskProducer, secret string,cache *rediss.Cache) *ProjectCtl {
+func NewProjectCtl(conn *grpc.ClientConn, taskAssignator *TaskProducer, secret string, cache *rediss.Cache) *ProjectCtl {
 	return &ProjectCtl{
 		Conn:           projectpb.NewProjectServiceClient(conn),
 		TaskAssignator: taskAssignator,
 		Secret:         secret,
-		Cache: cache,
+		Cache:          cache,
 	}
 }
 
@@ -63,7 +63,7 @@ func (proj *ProjectCtl) InjectProjectControllers(r *chi.Mux) {
 	r.Post("/project/members/tasks/assign", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.assignTasks)))
 	r.Get("/project/details", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.projectDetails)))
 	r.Get("/project/members", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.getProjectMembers)))
-	r.Post("/project/login", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.LogintoProject)))
+	r.Post("/project/login", middleware.ValidationMiddlewareClients(proj.LogintoProject))
 	r.Post("/project/member/statu/post", middleware.ValidationMiddlewareAdmins(proj.addMemberStatus))
 	r.Get("/project/tasks/get", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.getAssignedTasks)))
 	r.Get("/project/tasks/download", proj.downloadTask)
@@ -86,10 +86,10 @@ func (proj *ProjectCtl) InjectProjectControllers(r *chi.Mux) {
 	r.Post("/project/task/extensions/grant", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.grantExtension)))
 	r.Post("/project/task/verify", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.verifyTaskCompletion)))
 	r.Get("/project/verify/tasks", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.getverifiedTasks)))
-	r.Delete("/project/drop",middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.dropProject)))
-	r.Post("/project/members/terminate",middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.terminateProjectmembers)))
-	r.Patch("/project/details/update",middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.updateProjectDetails)))
-	r.Patch("/project/member/edit",middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.EditMember)))
-	r.Patch("/project/feedback/edit",middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.editFeedback)))
-	r.Delete("/project/feedback/delete",middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.deleteFeedback)))
+	r.Delete("/project/drop", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.dropProject)))
+	r.Post("/project/members/terminate", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.terminateProjectmembers)))
+	r.Patch("/project/details/update", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.updateProjectDetails)))
+	r.Patch("/project/member/edit", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.EditMember)))
+	r.Patch("/project/feedback/edit", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.editFeedback)))
+	r.Delete("/project/feedback/delete", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.deleteFeedback)))
 }

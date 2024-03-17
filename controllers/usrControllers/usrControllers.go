@@ -3,6 +3,7 @@ package usrcontrollers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -11,15 +12,34 @@ import (
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/userpb"
-	"github.com/akshay0074700747/proto-files-for-microservices/pb"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+type Orders struct {
+	OrderID        string `json:"OrderID"`
+	UserID         string `json:"UserID"`
+	AssetID        string `json:"AssetID"`
+	SubscriptionID string `json:"SubscriptionID"`
+	IsPayed        bool   `json:"IsPayed"`
+}
+
+type PaymentDetails struct {
+	PaymentID  string    `json:"PaymentID"`
+	OrderID    string    `json:"OrderID"`
+	PaymentRef string    `json:"PaymentRef"`
+	UpdatedAt  time.Time `json:"UpdatedAt" `
+}
 
 type Responce struct {
 	Message    string `json:"Message"`
 	StatusCode int    `json:"StatusCode"`
 	Status     string `json:"Status"`
+}
+
+type SendMail struct {
+	Email   string `json:"Email"`
+	Message string `json:"Message"`
 }
 
 func (usr *UserCtl) signupUser(w http.ResponseWriter, r *http.Request) {
@@ -37,30 +57,35 @@ func (usr *UserCtl) signupUser(w http.ResponseWriter, r *http.Request) {
 
 	if req.Otp == "" {
 
-		otp := helpers.SelectRandomintBetweenRange(100000,999999)
+		otp := helpers.SelectRandomintBetweenRange(100000, 999999)
 
-		if err := usr.Cache.CacheData(req.Email,[]byte(strconv.Itoa(otp)),time.Minute * 1,context.TODO()); err != nil {
-			helpers.PrintErr(err,"error happened at saving otp")
+		if err := usr.Cache.CacheData(req.Email, []byte(strconv.Itoa(otp)), time.Minute*1, context.TODO()); err != nil {
+			helpers.PrintErr(err, "error happened at saving otp")
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		message := "Subject: OTP Verification\r\n" +
-		"\r\n" +
-		"Here is your otp,\r\n" + strconv.Itoa(otp) +
-		"\r\n"
+			"\r\n" +
+			"Here is your otp,\r\n" + strconv.Itoa(otp) +
+			"\r\n"
 
-		email := pb.Email{
-			Reciever: req.Email,
-			Message:  message,
+		value, err := json.Marshal(SendMail{
+			Email:   req.Email,
+			Message: message,
+		})
+
+		if err != nil {
+			helpers.PrintErr(err, "error at marshaling")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
-		value, err := helpers.Serialize(&email)
 
 		err = usr.Producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &usr.Topic, Partition: 0},
 			Value:          value,
 		}, usr.DeliveryChan)
-	
+
 		e := <-usr.DeliveryChan
 		m := e.(*kafka.Message)
 		if m.TopicPartition.Error != nil {
@@ -73,39 +98,50 @@ func (usr *UserCtl) signupUser(w http.ResponseWriter, r *http.Request) {
 		res.Message = "Otp Sent Successfully"
 		res.Status = "Success"
 		res.StatusCode = http.StatusOK
-	
+
 		jsonDta, err := json.Marshal(res)
 		if err != nil {
 			helpers.PrintErr(err, "error happenedat marshaling to json")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	
+
 		w.WriteHeader(http.StatusOK)
-	
+
 		w.Header().Set("Content-Type", "application/json")
-	
+
 		w.Write(jsonDta)
-	}else {
+
+		fmt.Println(otp)
+
+		return
+	} else {
 		var res []byte
-		if err := usr.Cache.GetDataFromCache(req.Email,&res,context.TODO()); err != nil {
+		if err := usr.Cache.GetDataFromCache(req.Email, &res, context.TODO()); err != nil {
 			helpers.PrintErr(err, "there is a problem withb getting data from cache")
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		var otp string
-		if err := usr.Cache.Decode(res,&otp); err != nil {
+		fmt.Println(len(res), "csdkvhcsj")
+
+		var otp int
+		if err := json.Unmarshal(res, &otp); err != nil {
 			helpers.PrintErr(err, "there is a problem withb decoding")
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		if otp != req.Otp {
+		fmt.Println(otp, "------", req.Otp)
+
+		if strconv.Itoa(otp) != req.Otp {
 			http.Error(w, "the entered otp is not correct", http.StatusBadRequest)
 			return
 		}
 	}
+
+	fmt.Println(req.Otp, "kshbvkhf")
+	fmt.Println(req.Password, "---javmhdsbkj")
 
 	res, err := usr.Conn.SignupUser(r.Context(), &req)
 	if err != nil {
@@ -410,11 +446,84 @@ func (usr *UserCtl) getSubscriptionPlans(w http.ResponseWriter, r *http.Request)
 }
 
 func (usr *UserCtl) addSubscription(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/subscription/plan/add", http.StatusFound)
+	// http.Redirect(w, r, "http://localhost:50007/subscription/plan/add", http.StatusFound)
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", "http://localhost:50007/subscription/plan/add", r.Body)
+	if err != nil {
+		helpers.PrintErr(err, "eroror happenend at proxying the request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.Header = r.Header
+
+	_, err = client.Do(req)
+	if err != nil {
+		helpers.PrintErr(err, "eroror happenend at proxying the request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var res Responce
+	res.Message = "Added subscription Plan Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
 }
 
 func (usr *UserCtl) subscribe(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/subscription/plan/subscribe", http.StatusFound)
+	// http.Redirect(w, r, "http://localhost:50007/subscription/plan/subscribe", http.StatusFound)
+	client := &http.Client{}
+
+	userID := r.Context().Value("userID").(string)
+
+	req, err := http.NewRequest("POST", "http://localhost:50007/subscription/plan/subscribe", r.Body)
+	if err != nil {
+		helpers.PrintErr(err, "eroror happenend at proxying the request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.Header = r.Header
+	req.Header.Set("X-User-ID", userID)
+
+	res, err := client.Do(req)
+	if err != nil {
+		helpers.PrintErr(err, "eroror happenend at proxying the request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var orders Orders
+	if err := json.NewDecoder(res.Body).Decode(&orders); err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonDta, err := json.Marshal(orders)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
 }
 
 func (usr *UserCtl) getSubscriptions(w http.ResponseWriter, r *http.Request) {
@@ -423,6 +532,40 @@ func (usr *UserCtl) getSubscriptions(w http.ResponseWriter, r *http.Request) {
 
 func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "http://localhost:50007/subscription/plan/subscribe/order/pay", http.StatusFound)
+	// client := &http.Client{}
+	// req, err := http.NewRequest("POST", "http://localhost:50007/subscription/plan/subscribe/order/pay", r.Body)
+	// if err != nil {
+	// 	helpers.PrintErr(err, "eroror happenend at proxying the request")
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// req.Header = r.Header
+
+	// _, err = client.Do(req)
+	// if err != nil {
+	// 	helpers.PrintErr(err, "eroror happenend at proxying the request")
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// var res Responce
+	// res.Message = "Added subscription Plan Successfully"
+	// res.Status = "Success"
+	// res.StatusCode = http.StatusOK
+
+	// jsonDta, err := json.Marshal(res)
+	// if err != nil {
+	// 	helpers.PrintErr(err, "error happenedat marshaling to json")
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// w.WriteHeader(http.StatusOK)
+
+	// w.Header().Set("Content-Type", "application/json")
+
+	// w.Write(jsonDta)
 }
 
 func (usr *UserCtl) verifyPayment(w http.ResponseWriter, r *http.Request) {
@@ -434,5 +577,44 @@ func (usr *UserCtl) verifiedPayment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (usr *UserCtl) getAllPayments(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/payments", http.StatusFound)
+	// http.Redirect(w, r, "http://localhost:50007/payments", http.StatusFound)
+	client := &http.Client{}
+
+	userID := r.Context().Value("userID").(string)
+
+	req, err := http.NewRequest("GET", "http://localhost:50007/payments", r.Body)
+	if err != nil {
+		helpers.PrintErr(err, "eroror happenend at proxying the request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.Header = r.Header
+	req.Header.Set("X-User-ID", userID)
+
+	res, err := client.Do(req)
+	if err != nil {
+		helpers.PrintErr(err, "eroror happenend at proxying the request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var payments []PaymentDetails
+	if err := json.NewDecoder(res.Body).Decode(&payments); err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonDta, err := json.Marshal(payments)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
 }

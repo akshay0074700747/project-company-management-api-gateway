@@ -32,8 +32,11 @@ func (comp *CompanyCtl) CompanyMiddleware(next http.HandlerFunc) http.HandlerFun
 		companyID := r.Context().Value("companyID").(string)
 		userID := r.Context().Value("userID").(string)
 
+		fmt.Println(companyID, "  ---hsdavmchakdlkhkdsj")
+		fmt.Println(userID, "  ---usr")
+
 		var res []byte
-		if err := comp.Cache.GetDataFromCache(companyID+" "+userID, &res, context.TODO()); err != nil {
+		if err := comp.Cache.GetDataFromCache(companyID+"_"+userID, &res, context.TODO()); err != nil {
 			if err == redis.Nil {
 				check, err := comp.Conn.GetUserStat(context.TODO(), &companypb.GetUserStatReq{
 					CompanyID: companyID,
@@ -45,14 +48,16 @@ func (comp *CompanyCtl) CompanyMiddleware(next http.HandlerFunc) http.HandlerFun
 					return
 				}
 
-				resss,err := comp.Cache.Encode(check.IsAcceptable)
+				fmt.Println(check.IsAcceptable, "---aceppt")
+
+				resss, err := json.Marshal(check.IsAcceptable)
 				if err != nil {
 					helpers.PrintErr(err, "cannot encode")
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 
-				if err = comp.Cache.CacheData(companyID+" "+userID,resss,time.Hour * 48,context.TODO()); err != nil {
+				if err = comp.Cache.CacheData(companyID+"_"+userID, resss, time.Hour*48, context.TODO()); err != nil {
 					helpers.PrintErr(err, "cannot cache")
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -62,25 +67,24 @@ func (comp *CompanyCtl) CompanyMiddleware(next http.HandlerFunc) http.HandlerFun
 					http.Error(w, "you have no authority to access this route", http.StatusInternalServerError)
 					return
 				}
-				
-				return
 
 			} else {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-		}
+		} else {
+			var ress bool
+			if err := json.Unmarshal(res, &ress); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 
-		var ress bool
-		if err := comp.Cache.Decode(res, &ress); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			if !ress {
+				http.Error(w, "you are no longer a member of the company", http.StatusBadRequest)
+				return
+			}
 		}
-
-		if !ress {
-			http.Error(w, "you are no longer a member of the company", http.StatusBadRequest)
-			return
-		}
+		next(w, r)
 	}
 }
 

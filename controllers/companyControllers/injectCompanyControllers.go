@@ -66,7 +66,7 @@ func (comp *CompanyCtl) InjectCompanyControllers(r *chi.Mux) {
 	r.Post("/permissions/add", middleware.ValidationMiddlewareAdmins(comp.addPermissions))
 	r.Get("/company/details", middleware.ValidationMiddlewareClients(comp.CompanyMiddleware(comp.companyDetails)))
 	r.Get("/company/employees", middleware.ValidationMiddlewareClients(comp.CompanyMiddleware(comp.getCompanyEmployees)))
-	r.Post("/company/login", middleware.ValidationMiddlewareClients(comp.CompanyMiddleware(comp.LogintoCompany)))
+	r.Post("/company/login", middleware.ValidationMiddlewareClients(comp.LogintoCompany))
 	r.Post("/company/member/status/post", middleware.ValidationMiddlewareClients(comp.CompanyMiddleware(comp.addCompanyMemberStatuses)))
 	r.Post("/company/member/salary/increment", middleware.ValidationMiddlewareClients(comp.CompanyMiddleware(comp.salaryIncrementofEmployees)))
 	r.Post("/company/role/salary/increment", middleware.ValidationMiddlewareClients(comp.CompanyMiddleware(comp.salaryIncrementofRole)))

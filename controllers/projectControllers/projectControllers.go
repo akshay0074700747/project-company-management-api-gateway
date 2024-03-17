@@ -40,8 +40,11 @@ func (proj *ProjectCtl) ProjectMiddleware(next http.HandlerFunc) http.HandlerFun
 		projectID := r.Context().Value("projectID").(string)
 		userID := r.Context().Value("userID").(string)
 
+		fmt.Println(projectID, "---proj")
+		fmt.Println(userID, "---usr")
+
 		var res []byte
-		if err := proj.Cache.GetDataFromCache(projectID+" "+userID, &res, context.TODO()); err != nil {
+		if err := proj.Cache.GetDataFromCache(projectID+"_"+userID, &res, context.TODO()); err != nil {
 			if err == redis.Nil {
 				check, err := proj.Conn.GetUserStat(context.TODO(), &projectpb.GetUserStatReq{
 					ProjectID: projectID,
@@ -53,14 +56,14 @@ func (proj *ProjectCtl) ProjectMiddleware(next http.HandlerFunc) http.HandlerFun
 					return
 				}
 
-				resss, err := proj.Cache.Encode(check.IsAcceptable)
+				resss, err := json.Marshal(check.IsAcceptable)
 				if err != nil {
 					helpers.PrintErr(err, "cannot encode")
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 
-				if err = proj.Cache.CacheData(projectID+" "+userID, resss, time.Hour*48, context.TODO()); err != nil {
+				if err = proj.Cache.CacheData(projectID+"_"+userID, resss, time.Hour*48, context.TODO()); err != nil {
 					helpers.PrintErr(err, "cannot cache")
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -71,24 +74,23 @@ func (proj *ProjectCtl) ProjectMiddleware(next http.HandlerFunc) http.HandlerFun
 					return
 				}
 
-				return
-
 			} else {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-		}
+		} else {
+			var ress bool
+			if err := json.Unmarshal(res, &ress); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 
-		var ress bool
-		if err := proj.Cache.Decode(res, &ress); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			if !ress {
+				http.Error(w, "you are no longer a member of the project", http.StatusBadRequest)
+				return
+			}
 		}
-
-		if !ress {
-			http.Error(w, "you are no longer a member of the project", http.StatusBadRequest)
-			return
-		}
+		next(w, r)
 	}
 }
 

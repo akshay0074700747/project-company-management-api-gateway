@@ -68,7 +68,6 @@ func ValidationMiddlewareClients(next http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 		}()
-
 		var ctx = r.Context()
 
 		cookie, err := r.Cookie("authentication")

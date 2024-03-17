@@ -1,21 +1,23 @@
 package clicontroller
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"regexp"
 
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/joho/godotenv"
 )
+
+type CliCtl struct {
+	Client *s3.S3
+	BucketName string
+}
 
 func init() {
 	if err := godotenv.Load(".env"); err != nil {
@@ -25,107 +27,58 @@ func init() {
 	secretAccessKey = os.Getenv("secretaccess")
 }
 
+type GetDownloads struct {
+	Key  string `json:"Key"`
+	Size string `json:"Size"`
+}
+
 var (
 	accessKey       string
 	secretAccessKey string
+	converter       float32
 )
-
-func downloadCli(w http.ResponseWriter, r *http.Request) {
-
-	var res = make(map[string]string)
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		helpers.PrintErr(err, "error on unmarshaling to json on downloadcli")
-		http.Error(w, "error on unmarshling to json", http.StatusInternalServerError)
-		return
-	}
-
-	if err = json.Unmarshal(body, &res); err != nil {
-		helpers.PrintErr(err, "error on unmarshaling to json on downloadcli")
-		http.Error(w, "error on unmarshling to map", http.StatusInternalServerError)
-		return
-	}
-
-	pattern := regexp.MustCompile(`\.tar\.gz$`)
-
-	if res["format"] == "" || !pattern.MatchString(res["format"]) {
-		helpers.PrintErr(err, "error on unmarshaling to json on downloadcli")
-		http.Error(w, "please provide a valid format", http.StatusBadRequest)
-		return
-	}
-
-	keyName := res["format"]
-
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretAccessKey, "")),
-	)
-	if err != nil {
-		fmt.Println("Error loading AWS config:", err)
-		os.Exit(1)
-	}
-
-	client := s3.NewFromConfig(cfg)
-
-	bucketName := "project-and-company-management-cli-utitlity-tracker"
-
-	resp, err := client.GetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    &keyName,
-	})
-	if err != nil {
-		fmt.Println("Error listing objects:", err)
-		http.Error(w, "Error downloading file from S3", http.StatusInternalServerError)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	w.Header().Set("Content-Type", "application/gzip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", res["format"]))
-
-	if _, err = io.Copy(w, resp.Body); err != nil {
-		http.Error(w, "Error writing file content to response", http.StatusInternalServerError)
-		return
-	}
-
-}
 
 func getDownloads(w http.ResponseWriter, r *http.Request) {
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretAccessKey, "")),
-	)
+	creds := credentials.NewStaticCredentials(accessKey, secretAccessKey, "")
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String("ap-south-1"),
+		Credentials: creds,
+	})
 	if err != nil {
-		http.Error(w, "there is a problem", http.StatusInternalServerError)
-		helpers.PrintErr(err, "cannot congig aws")
+		fmt.Println("Error creating session:", err)
 		return
 	}
 
-	client := s3.NewFromConfig(cfg)
+	svc := s3.New(sess)
 
 	bucketName := "project-and-company-management-cli-utitlity-tracker"
 
-	resp, err := client.ListObjects(context.TODO(), &s3.ListObjectsInput{
-		Bucket: &bucketName,
-		Prefix: aws.String("releases/"),
-	})
-	if err != nil {
-		http.Error(w, "there is a problem", http.StatusInternalServerError)
-		helpers.PrintErr(err, "cannot list objects")
+	// Create a ListObjects input struct
+	input := &s3.ListObjectsInput{
+		Bucket: aws.String(bucketName),
+	}
+
+	var result []GetDownloads
+
+	if err := svc.ListObjectsPages(input, func(page *s3.ListObjectsOutput, lastPage bool) bool {
+		converter = 1048576
+		for _, object := range page.Contents {
+			sizeMB := float32(*object.Size) / converter
+			result = append(result, GetDownloads{
+				Key:  *object.Key,
+				Size: fmt.Sprintf("%f MB", sizeMB),
+			})
+
+		}
+		return true
+	}); err != nil {
+		fmt.Println("Error listing objects:", err)
 		return
 	}
 
-	pattern := regexp.MustCompile(`\.tar\.gz$`)
-
-	var responce []string
-	for _, obj := range resp.Contents {
-		if *obj.Key != "" && pattern.MatchString(*obj.Key) {
-			responce = append(responce, *obj.Key)
-		}
-	}
-
-	jsondta, err := json.Marshal(responce)
+	jsondta, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, "there is a problem with parsing to json", http.StatusInternalServerError)
 		helpers.PrintErr(err, "cannot parse to json on getdownloads")
@@ -137,7 +90,8 @@ func getDownloads(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	w.Write(jsondta)
-
 }
 
-//s3://project-and-company-management-cli-utitlity-tracker/releases/
+func downloadCli(w http.ResponseWriter, r *http.Request)  {
+	
+}
