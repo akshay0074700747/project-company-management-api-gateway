@@ -214,11 +214,23 @@ func (project *ProjectCtl) addMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var res Responce
+	res.Message = "Member Invite Sent Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("new member invite sent successfully..."))
+	w.Write(jsonDta)
 }
 
 func (project *ProjectCtl) projectInvites(w http.ResponseWriter, r *http.Request) {
@@ -283,11 +295,23 @@ func (project *ProjectCtl) acceptProjectInvite(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	var res Responce
+	res.Message = "Accepted the Project Invite Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("accepted projectInvite successfully..."))
+	w.Write(jsonDta)
 }
 
 func (proj *ProjectCtl) projectDetails(w http.ResponseWriter, r *http.Request) {
@@ -449,11 +473,23 @@ func (project *ProjectCtl) assignTasks(w http.ResponseWriter, r *http.Request) {
 		helpers.PrintMsg("message delivered")
 	}
 
-	w.WriteHeader(http.StatusOK)
+	var ress Responce
+	ress.Message = "Assigned the Task to Member Successfully"
+	ress.Status = "Success"
+	ress.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(ress)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("Tasks assigned Successfully..."))
+	w.Write(jsonDta)
 }
 
 func (project *ProjectCtl) downloadTask(w http.ResponseWriter, r *http.Request) {
@@ -530,11 +566,23 @@ func (proj *ProjectCtl) LogintoProject(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
-	w.WriteHeader(http.StatusCreated)
+	var ress Responce
+	ress.Message = "Logged into the Project Successfully"
+	ress.Status = "Success"
+	ress.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(ress)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("logged into project"))
+	w.Write(jsonDta)
 }
 
 func (proj *ProjectCtl) addMemberStatus(w http.ResponseWriter, r *http.Request) {
@@ -553,11 +601,23 @@ func (proj *ProjectCtl) addMemberStatus(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	var res Responce
+	res.Message = "Added member status Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("project status added successfully"))
+	w.Write(jsonDta)
 }
 
 func (proj *ProjectCtl) getAssignedTasks(w http.ResponseWriter, r *http.Request) {
@@ -583,6 +643,8 @@ func (proj *ProjectCtl) getAssignedTasks(w http.ResponseWriter, r *http.Request)
 		helpers.PrintErr(err, "cannot GetAssignedTask")
 		return
 	}
+
+	res.Deadline = nil
 
 	jsonDta, err := json.Marshal(res)
 	if err != nil {
@@ -739,11 +801,23 @@ func (proj *ProjectCtl) markProgressofNonTechnical(w http.ResponseWriter, r *htt
 		return
 	}
 
+	var res Responce
+	res.Message = "Marked Progress Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("progress have been marked successfully"))
+	w.Write(jsonDta)
 }
 
 func (proj *ProjectCtl) addTaskStatuses(w http.ResponseWriter, r *http.Request) {
@@ -762,11 +836,23 @@ func (proj *ProjectCtl) addTaskStatuses(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	var res Responce
+	res.Message = "Added Task Status Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("task status have been added successfully"))
+	w.Write(jsonDta)
 }
 
 func (proj *ProjectCtl) getLiveProjectsofCompany(w http.ResponseWriter, r *http.Request) {
@@ -834,9 +920,23 @@ func (proj *ProjectCtl) logoutFromProject(w http.ResponseWriter, r *http.Request
 
 	http.SetCookie(w, cookie)
 
+	var res Responce
+	res.Message = "Logged out from the Project Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 
-	w.Write([]byte("Logged out Successfully..."))
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
 }
 
 func (proj *ProjectCtl) getCompletedMembers(w http.ResponseWriter, r *http.Request) {

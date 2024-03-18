@@ -3,9 +3,10 @@ package snapshotcontrollers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
+
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -27,6 +28,8 @@ type Snap struct {
 }
 
 func (snap *SnapshotCtl) pushSnapshots(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("pusshingggggg....")
 
 	var snapmsg SnapMsg
 
@@ -94,7 +97,7 @@ func (snap *SnapshotCtl) pushSnapshots(w http.ResponseWriter, r *http.Request) {
 	} else {
 		helpers.PrintMsg("message delivered")
 	}
-
+	fmt.Println("completed...")
 	w.WriteHeader(http.StatusOK)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -105,7 +108,7 @@ func (snap *SnapshotCtl) pushSnapshots(w http.ResponseWriter, r *http.Request) {
 
 func (snap *SnapshotCtl) pullSnapshot(w http.ResponseWriter, r *http.Request) {
 
-	url := fmt.Sprintf("http://localhost:50005/snapshots/pull?commitID=%s",r.URL.Query().Get("commitID"))
+	url := fmt.Sprintf("http://localhost:50005/snapshots/pull?commitID=%s", r.URL.Query().Get("commitID"))
 
 	http.Redirect(w, r, url, http.StatusFound)
 

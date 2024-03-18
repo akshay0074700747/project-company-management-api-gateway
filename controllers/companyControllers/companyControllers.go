@@ -112,6 +112,27 @@ func (comp *CompanyCtl) registerCompany(w http.ResponseWriter, r *http.Request) 
 
 	res, err := comp.Conn.RegisterCompany(r.Context(), &req)
 	if err != nil {
+		if err.Error() == "rpc error: code = Unknown desc = the user is not payed" {
+			var res Responce
+			res.Message = "You must Subscribe to Create a Company"
+			res.Status = "Failed"
+			res.StatusCode = http.StatusBadRequest
+
+			jsonDta, err := json.Marshal(res)
+			if err != nil {
+				helpers.PrintErr(err, "error happenedat marshaling to json")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusBadRequest)
+
+			w.Header().Set("Content-Type", "application/json")
+
+			w.Write(jsonDta)
+
+			return
+		}
 		helpers.PrintErr(err, "error on registering Company")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -258,11 +279,23 @@ func (comp *CompanyCtl) addEmployees(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var res Responce
+	res.Message = "Added Employee Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("employee request send successfully..."))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) attachRolewithPermissions(w http.ResponseWriter, r *http.Request) {
@@ -291,11 +324,23 @@ func (comp *CompanyCtl) attachRolewithPermissions(w http.ResponseWriter, r *http
 		return
 	}
 
+	var res Responce
+	res.Message = "Binded Role with Permission Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("attached role with the given permission successfully..."))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) getattachedRoleswithPermissions(w http.ResponseWriter, r *http.Request) {
@@ -361,11 +406,23 @@ func (comp *CompanyCtl) addCompanyTypes(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	var res Responce
+	res.Message = "Added Company Type Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("new Company Type added successfully..."))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) addPermissions(w http.ResponseWriter, r *http.Request) {
@@ -384,11 +441,23 @@ func (comp *CompanyCtl) addPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var res Responce
+	res.Message = "Added Permission Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("new permission added successfully..."))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) companyDetails(w http.ResponseWriter, r *http.Request) {
@@ -502,11 +571,23 @@ func (comp *CompanyCtl) LogintoCompany(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
-	w.WriteHeader(http.StatusCreated)
+	var ress Responce
+	ress.Message = "Logged into the Company Successfully"
+	ress.Status = "Success"
+	ress.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(ress)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("logged into company"))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) addCompanyMemberStatuses(w http.ResponseWriter, r *http.Request) {
@@ -525,11 +606,23 @@ func (comp *CompanyCtl) addCompanyMemberStatuses(w http.ResponseWriter, r *http.
 		return
 	}
 
+	var res Responce
+	res.Message = "Added member status Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("created status"))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) salaryIncrementofEmployees(w http.ResponseWriter, r *http.Request) {
@@ -558,11 +651,23 @@ func (comp *CompanyCtl) salaryIncrementofEmployees(w http.ResponseWriter, r *htt
 		return
 	}
 
+	var res Responce
+	res.Message = "Incremented Salary of Employee Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("salary incremented success"))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) salaryIncrementofRole(w http.ResponseWriter, r *http.Request) {
@@ -591,11 +696,23 @@ func (comp *CompanyCtl) salaryIncrementofRole(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	var res Responce
+	res.Message = "Incremented Salary of Role Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("salary incremented success"))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) getAverageSalaryPerRole(w http.ResponseWriter, r *http.Request) {
@@ -719,11 +836,23 @@ func (comp *CompanyCtl) raiseProblem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var res Responce
+	res.Message = "Raised Problem Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusCreated
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write([]byte("problem submitted"))
+	w.Write(jsonDta)
 }
 
 func (comp *CompanyCtl) getProbelmsinaCompany(w http.ResponseWriter, r *http.Request) {
@@ -912,9 +1041,23 @@ func (comp *CompanyCtl) logoutFromCompany(w http.ResponseWriter, r *http.Request
 		http.SetCookie(w, projectCookie)
 	}
 
+	var res Responce
+	res.Message = "Logged out of the Company Successfully"
+	res.Status = "Success"
+	res.StatusCode = http.StatusOK
+
+	jsonDta, err := json.Marshal(res)
+	if err != nil {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 
-	w.Write([]byte("Logged out Successfully..."))
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Write(jsonDta)
 }
 
 type Address struct {

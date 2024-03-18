@@ -49,7 +49,7 @@ func Inject(r *chi.Mux) {
 	jobAssignator := companycontrollers.NewJobProducer("jobTopic")
 	companyCtl := companycontrollers.NewCompanyCtl(companyConn, secret, jobAssignator, cache)
 	authCtl := authcontrollers.NewAuthCtl(authConn, secret)
-	cliCtl := clicontroller.NewCliCtl()
+	cliCtl := clicontroller.NewCliCtl(cache)
 	//
 	userCtl.InjectUserControllers(r)
 	projectCtl.InjectProjectControllers(r)
