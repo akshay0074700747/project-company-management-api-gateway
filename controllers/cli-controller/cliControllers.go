@@ -3,6 +3,7 @@ package clicontroller
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -15,30 +16,16 @@ import (
 )
 
 type CliCtl struct {
-	Client *s3.S3
+	Client     *s3.S3
 	BucketName string
 }
 
-func init() {
+func NewCliCtl() *CliCtl {
 	if err := godotenv.Load(".env"); err != nil {
 		helpers.PrintErr(err, "the secret cannot be retrieved...")
 	}
-	accessKey = os.Getenv("accesskey")
-	secretAccessKey = os.Getenv("secretaccess")
-}
-
-type GetDownloads struct {
-	Key  string `json:"Key"`
-	Size string `json:"Size"`
-}
-
-var (
-	accessKey       string
-	secretAccessKey string
-	converter       float32
-)
-
-func getDownloads(w http.ResponseWriter, r *http.Request) {
+	accessKey := os.Getenv("accesskey")
+	secretAccessKey := os.Getenv("secretaccess")
 
 	creds := credentials.NewStaticCredentials(accessKey, secretAccessKey, "")
 
@@ -48,21 +35,34 @@ func getDownloads(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		fmt.Println("Error creating session:", err)
-		return
 	}
 
 	svc := s3.New(sess)
 
-	bucketName := "project-and-company-management-cli-utitlity-tracker"
+	return &CliCtl{
+		Client:     svc,
+		BucketName: "project-and-company-management-cli-utitlity-tracker",
+	}
+}
 
-	// Create a ListObjects input struct
+type GetDownloads struct {
+	Key  string `json:"Key"`
+	Size string `json:"Size"`
+}
+
+var (
+	converter float32
+)
+
+func (cli *CliCtl) getDownloads(w http.ResponseWriter, r *http.Request) {
+
 	input := &s3.ListObjectsInput{
-		Bucket: aws.String(bucketName),
+		Bucket: aws.String(cli.BucketName),
 	}
 
 	var result []GetDownloads
 
-	if err := svc.ListObjectsPages(input, func(page *s3.ListObjectsOutput, lastPage bool) bool {
+	if err := cli.Client.ListObjectsPages(input, func(page *s3.ListObjectsOutput, lastPage bool) bool {
 		converter = 1048576
 		for _, object := range page.Contents {
 			sizeMB := float32(*object.Size) / converter
@@ -92,6 +92,43 @@ func getDownloads(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsondta)
 }
 
-func downloadCli(w http.ResponseWriter, r *http.Request)  {
-	
+func (cli *CliCtl) downloadCli(w http.ResponseWriter, r *http.Request) {
+
+	objKey := r.URL.Query().Get("objectKey")
+
+	fmt.Println(objKey, " -----key")
+
+	if objKey == "" {
+		http.Error(w, "the object key cannot be empty", http.StatusInternalServerError)
+		return
+	}
+
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(cli.BucketName),
+		Key:    aws.String(objKey),
+	}
+
+	result, err := cli.Client.GetObject(input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		helpers.PrintErr(err, "error at getting the object")
+		return
+	}
+
+	defer result.Body.Close()
+
+	fmt.Println(*result.ContentLength, " ----------size")
+
+	val := fmt.Sprintf("attachment; filename=%s", objKey)
+
+	w.Header().Set("Content-Disposition", val)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", *result.ContentLength))
+
+	if _, err = io.Copy(w, result.Body); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		helpers.PrintErr(err, "cannot copy from reader to wirter")
+		return
+	}
+
 }

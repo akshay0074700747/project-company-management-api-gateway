@@ -43,18 +43,19 @@ func Inject(r *chi.Mux) {
 	//
 	cache := rediss.NewCache(rediss.NewRedis())
 	//
-	userCtl := usrcontrollers.NewUserserviceClient(userConn, secret,cache,"Emailsender")
+	userCtl := usrcontrollers.NewUserserviceClient(userConn, secret, cache, "Emailsender")
 	taskAssignator := projectcontrollers.NewTaskProducer("taskTopic")
-	projectCtl := projectcontrollers.NewProjectCtl(projectConn, taskAssignator, secret,cache)
+	projectCtl := projectcontrollers.NewProjectCtl(projectConn, taskAssignator, secret, cache)
 	jobAssignator := companycontrollers.NewJobProducer("jobTopic")
-	companyCtl := companycontrollers.NewCompanyCtl(companyConn, secret, jobAssignator,cache)
+	companyCtl := companycontrollers.NewCompanyCtl(companyConn, secret, jobAssignator, cache)
 	authCtl := authcontrollers.NewAuthCtl(authConn, secret)
+	cliCtl := clicontroller.NewCliCtl()
 	//
 	userCtl.InjectUserControllers(r)
 	projectCtl.InjectProjectControllers(r)
 	companyCtl.InjectCompanyControllers(r)
 	authCtl.InjectAuthControllers(r)
-	clicontroller.InjectCliControllers(r)
+	cliCtl.InjectCliControllers(r)
 	snapShotCtl := snapshotcontrollers.NewSnapshotCtl("SnapshotTopic")
 	snapShotCtl.InjectSnapshotControllers(r)
 	chatcontrollers.InjectChatControllers(r)
