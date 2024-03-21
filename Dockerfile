@@ -1,4 +1,4 @@
-FROM golang:1.21.5-alpine
+FROM golang:1.21.5-alpine 
 
 RUN apt-get update && apt-get install -y curl libcurl-dev
 
