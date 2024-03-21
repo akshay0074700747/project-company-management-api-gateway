@@ -31,6 +31,6 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          # context:  ./api-gateway/
+          context:  .
           push: true
-          tags: akshayhere999/project-and-company-management-api-gateway:v0.0.9
+          tags: akshayhere999/project-and-company-management-api-gateway:v0.1.0
