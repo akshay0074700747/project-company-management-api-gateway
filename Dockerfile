@@ -1,4 +1,4 @@
-FROM golang:1.21.5-bullseye AS build
+FROM golang:1.21.5-ubuntu:latest
 
 RUN apt-get update && apt-get install -y curl libcurl-dev
 
