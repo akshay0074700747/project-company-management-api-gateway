@@ -20,7 +20,7 @@ func NewCache(client *redis.Client) *Cache {
 func NewRedis() *redis.Client {
 	// Connect to Redis
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // Redis server address
+		Addr:     "host.docker.internal:6379", // Redis server address
 		Password: "",               // No password set
 		DB:       0,                // Use default DB
 	})
