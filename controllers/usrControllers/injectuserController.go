@@ -22,7 +22,7 @@ type UserCtl struct {
 func NewUserserviceClient(conn *grpc.ClientConn, secret string, cache *rediss.Cache, topic string) *UserCtl {
 
 	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": "host.docker.internal:9092",
 		"client.id":         "email-producer",
 		"acks":              "all",
 	}

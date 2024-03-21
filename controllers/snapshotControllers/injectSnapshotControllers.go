@@ -14,7 +14,7 @@ type SnapshotCtl struct {
 
 func NewSnapshotCtl(topic string) *SnapshotCtl {
 	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": "host.docker.internal:9092",
 		"client.id":         "snapShot-producer",
 		"acks":              "all",
 	}

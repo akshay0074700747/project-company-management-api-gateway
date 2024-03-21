@@ -26,7 +26,7 @@ type TaskProducer struct {
 func NewTaskProducer(topic string) *TaskProducer {
 
 	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": "host.docker.internal:9092",
 		"client.id":         "taskAssignation-producer",
 		"acks":              "all",
 	}

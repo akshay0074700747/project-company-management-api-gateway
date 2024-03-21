@@ -26,7 +26,7 @@ type JobProducer struct {
 func NewJobProducer(topic string) *JobProducer {
 
 	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": "host.docker.internal:9092",
 		"client.id":         "jobApplier-producer",
 		"acks":              "all",
 	}
