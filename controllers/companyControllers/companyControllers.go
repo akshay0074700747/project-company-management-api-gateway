@@ -32,9 +32,6 @@ func (comp *CompanyCtl) CompanyMiddleware(next http.HandlerFunc) http.HandlerFun
 		companyID := r.Context().Value("companyID").(string)
 		userID := r.Context().Value("userID").(string)
 
-		fmt.Println(companyID, "  ---hsdavmchakdlkhkdsj")
-		fmt.Println(userID, "  ---usr")
-
 		var res []byte
 		if err := comp.Cache.GetDataFromCache(companyID+"_"+userID, &res, context.TODO()); err != nil {
 			if err == redis.Nil {
@@ -262,7 +259,6 @@ func (comp *CompanyCtl) addEmployees(w http.ResponseWriter, r *http.Request) {
 	}
 
 	companyID := r.Context().Value("companyID").(string)
-
 	var req companypb.AddEmployeeReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helpers.PrintErr(err, "cannot decode json on addEmployees")

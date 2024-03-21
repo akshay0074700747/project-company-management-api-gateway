@@ -1,14 +1,11 @@
 package clicontroller
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/rediss"
@@ -109,80 +106,80 @@ func (cli *CliCtl) downloadCli(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var res []byte
-	if err := cli.Cache.GetDataFromCache(objKey, &res, context.TODO()); err != nil {
-		input := &s3.GetObjectInput{
-			Bucket: aws.String(cli.BucketName),
-			Key:    aws.String(objKey),
-		}
-
-		result, err := cli.Client.GetObject(input)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			helpers.PrintErr(err, "error at getting the object")
-			return
-		}
-
-		fmt.Println(*result.ContentLength, " ----------size")
-
-		val := fmt.Sprintf("attachment; filename=%s", objKey)
-
-		w.Header().Set("Content-Disposition", val)
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", *result.ContentLength))
-
-		if _, err = io.Copy(w, result.Body); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			helpers.PrintErr(err, "cannot copy from reader to wirter")
-			return
-		}
-
-		go func() {
-
-			defer result.Body.Close()
-
-			var bytRes = make([]byte, int(*result.ContentLength))
-
-			_, err := result.Body.Read(bytRes)
-			if err != nil && err != io.EOF {
-				helpers.PrintErr(err, "eror happened at reading from result")
-			}
-
-			// bytRes, err := io.ReadAll(result.Body)
-			// if err != nil {
-			// 	helpers.PrintErr(err, "eror happened at reading from result")
-			// }
-
-			fmt.Println(len(bytRes), "--sjdbhakhjcb")
-
-			if err = cli.Cache.CacheData(objKey, bytRes, time.Hour*24, context.TODO()); err != nil {
-				helpers.PrintErr(err, "cannot cache")
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			fmt.Println("successfully cached...")
-
-		}()
-
-	} else {
-
-		reader := bytes.NewReader(res)
-
-		val := fmt.Sprintf("attachment; filename=%s", objKey)
-
-		w.Header().Set("Content-Disposition", val)
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", reader.Size()))
-
-		if _, err = io.Copy(w, reader); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			helpers.PrintErr(err, "cannot copy from reader to wirter")
-			return
-		}
-
-		fmt.Println("successfully got from cache...")
+	// var res []byte
+	// if err := cli.Cache.GetDataFromCache(objKey, &res, context.TODO()); err != nil {
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(cli.BucketName),
+		Key:    aws.String(objKey),
 	}
+
+	result, err := cli.Client.GetObject(input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		helpers.PrintErr(err, "error at getting the object")
+		return
+	}
+
+	fmt.Println(*result.ContentLength, " ----------size")
+
+	val := fmt.Sprintf("attachment; filename=%s", objKey)
+
+	w.Header().Set("Content-Disposition", val)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", *result.ContentLength))
+
+	if _, err = io.Copy(w, result.Body); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		helpers.PrintErr(err, "cannot copy from reader to wirter")
+		return
+	}
+
+	// go func() {
+
+	// 	defer result.Body.Close()
+
+	// 	var bytRes = make([]byte, int(*result.ContentLength))
+
+	// 	_, err := result.Body.Read(bytRes)
+	// 	if err != nil && err != io.EOF {
+	// 		helpers.PrintErr(err, "eror happened at reading from result")
+	// 	}
+
+	// 	// bytRes, err := io.ReadAll(result.Body)
+	// 	// if err != nil {
+	// 	// 	helpers.PrintErr(err, "eror happened at reading from result")
+	// 	// }
+
+	// 	fmt.Println(len(bytRes), "--sjdbhakhjcb")
+
+	// 	if err = cli.Cache.CacheData(objKey, bytRes, time.Hour*24, context.TODO()); err != nil {
+	// 		helpers.PrintErr(err, "cannot cache")
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 		return
+	// 	}
+
+	// 	fmt.Println("successfully cached...")
+
+	// }()
+
+	// } else {
+
+	// 	reader := bytes.NewReader(res)
+
+	// 	val := fmt.Sprintf("attachment; filename=%s", objKey)
+
+	// 	w.Header().Set("Content-Disposition", val)
+	// 	w.Header().Set("Content-Type", "application/octet-stream")
+	// 	w.Header().Set("Content-Length", fmt.Sprintf("%d", reader.Size()))
+
+	// 	if _, err = io.Copy(w, reader); err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 		helpers.PrintErr(err, "cannot copy from reader to wirter")
+	// 		return
+	// 	}
+
+	// 	fmt.Println("successfully got from cache...")
+	// }
 
 	// input := &s3.GetObjectInput{
 	// 	Bucket: aws.String(cli.BucketName),
