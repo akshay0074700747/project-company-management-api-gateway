@@ -1,6 +1,6 @@
 FROM golang:1.21.5-bullseye AS build
 
-RUN apt-get update
+RUN apt-get update && apt-get install -y curl libcurl-dev
 
 WORKDIR /app
 
