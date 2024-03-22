@@ -453,13 +453,13 @@ func (usr *UserCtl) updateDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (usr *UserCtl) getSubscriptionPlans(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/subscription/plan", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service:50007/subscription/plan", http.StatusFound)
 }
 
 func (usr *UserCtl) addSubscription(w http.ResponseWriter, r *http.Request) {
 	// http.Redirect(w, r, "http://localhost:50007/subscription/plan/add", http.StatusFound)
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", "http://localhost:50007/subscription/plan/add", r.Body)
+	req, err := http.NewRequest("POST", "http://payment-service:50007/subscription/plan/add", r.Body)
 	if err != nil {
 		helpers.PrintErr(err, "eroror happenend at proxying the request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -500,7 +500,7 @@ func (usr *UserCtl) subscribe(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value("userID").(string)
 
-	req, err := http.NewRequest("POST", "http://localhost:50007/subscription/plan/subscribe", r.Body)
+	req, err := http.NewRequest("POST", "http://payment-service:50007/subscription/plan/subscribe", r.Body)
 	if err != nil {
 		helpers.PrintErr(err, "eroror happenend at proxying the request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -538,11 +538,11 @@ func (usr *UserCtl) subscribe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (usr *UserCtl) getSubscriptions(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/subscriptions", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service:50007/subscriptions", http.StatusFound)
 }
 
 func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/subscription/plan/subscribe/order/pay", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service:50007/subscription/plan/subscribe/order/pay", http.StatusFound)
 	// client := &http.Client{}
 	// req, err := http.NewRequest("POST", "http://localhost:50007/subscription/plan/subscribe/order/pay", r.Body)
 	// if err != nil {
@@ -580,11 +580,11 @@ func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
 }
 
 func (usr *UserCtl) verifyPayment(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/verify/payment", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service:50007/verify/payment", http.StatusFound)
 }
 
 func (usr *UserCtl) verifiedPayment(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:50007/payment/verified", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service:50007/payment/verified", http.StatusFound)
 }
 
 func (usr *UserCtl) getAllPayments(w http.ResponseWriter, r *http.Request) {
@@ -593,7 +593,7 @@ func (usr *UserCtl) getAllPayments(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value("userID").(string)
 
-	req, err := http.NewRequest("GET", "http://localhost:50007/payments", r.Body)
+	req, err := http.NewRequest("GET", "http://payment-service:50007/payments", r.Body)
 	if err != nil {
 		helpers.PrintErr(err, "eroror happenend at proxying the request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

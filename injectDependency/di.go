@@ -24,19 +24,19 @@ func Inject(r *chi.Mux) {
 	secret := os.Getenv("secret")
 
 	//
-	userConn, err := helpers.DialGrpc(":50001")
+	userConn, err := helpers.DialGrpc("user-service:50001")
 	if err != nil {
 		helpers.PrintErr(err, "cannot connect to user-service")
 	}
-	projectConn, err := helpers.DialGrpc(":50002")
+	projectConn, err := helpers.DialGrpc("project-service:50002")
 	if err != nil {
 		helpers.PrintErr(err, "cannot connect to project-service")
 	}
-	companyConn, err := helpers.DialGrpc(":50003")
+	companyConn, err := helpers.DialGrpc("company-service:50003")
 	if err != nil {
 		helpers.PrintErr(err, "cannot connect to company-service")
 	}
-	authConn, err := helpers.DialGrpc(":50004")
+	authConn, err := helpers.DialGrpc("auth-service:50004")
 	if err != nil {
 		helpers.PrintErr(err, "cannot connect to auth-service")
 	}

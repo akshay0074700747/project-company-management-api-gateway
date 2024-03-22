@@ -106,7 +106,7 @@ func (snap *SnapshotCtl) pushSnapshots(w http.ResponseWriter, r *http.Request) {
 
 func (snap *SnapshotCtl) pullSnapshot(w http.ResponseWriter, r *http.Request) {
 
-	url := fmt.Sprintf("http://localhost:50005/snapshots/pull?commitID=%s", r.URL.Query().Get("commitID"))
+	url := fmt.Sprintf("http://snapshot-service:50005/snapshots/pull?commitID=%s", r.URL.Query().Get("commitID"))
 
 	http.Redirect(w, r, url, http.StatusFound)
 

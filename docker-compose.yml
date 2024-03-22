@@ -77,9 +77,10 @@ services:
       - "9001:9001"
     volumes:
       - minio-data:/data 
+    command: minio server /data
 
   api-gateway:
-    image: akshayhere999/project-and-company-management-api-gateway:v0.1.2
+    image: akshayhere999/project-and-company-management-api-gateway:v0.1.3
     ports:
       - '50000:50000'
     depends_on:
@@ -112,7 +113,7 @@ services:
       - minio
 
   company-service:
-    image: akshayhere999/project-and-company-management-company-service:v0.1.2
+    image: akshayhere999/project-and-company-management-company-service:v0.1.3
     ports:
       - '50003:50003'
     depends_on:
@@ -123,7 +124,7 @@ services:
       - minio
 
   email-service:
-    image: akshayhere999/project-and-company-management-email-service:v0.1.3
+    image: akshayhere999/project-and-company-management-email-service:v0.1.7
     depends_on:
       - kafka
       - postgres
@@ -143,7 +144,7 @@ services:
       - minio
 
   project-service:
-    image: akshayhere999/project-and-company-management-project-service:v0.1.2
+    image: akshayhere999/project-and-company-management-project-service:v0.1.3
     ports:
       - '50002:50002'
     depends_on:
@@ -154,7 +155,7 @@ services:
       - minio
 
   snapshot-service:
-    image: akshayhere999/project-and-company-management-snapshot-service:v0.2.0
+    image: akshayhere999/project-and-company-management-snapshot-service:v0.2.1
     ports:
       - '50005:50005'
     depends_on:
