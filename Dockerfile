@@ -8,8 +8,6 @@ RUN go mod download
 
 WORKDIR /app/cmd
 
-RUN go get -u github.com/confluentinc/confluent-kafka-go/v2/kafka
-
 RUN go build -o api-gateway
 
 FROM busybox:latest

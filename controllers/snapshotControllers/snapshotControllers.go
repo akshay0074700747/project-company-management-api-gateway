@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/IBM/sarama"
 )
 
 type SnapMsg struct {
@@ -85,17 +85,15 @@ func (snap *SnapshotCtl) pushSnapshots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = snap.Producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &snap.Topic, Partition: 0},
-		Value:          msgBytes,
-	}, snap.DeliveryChan)
-
-	e := <-snap.DeliveryChan
-	m := e.(*kafka.Message)
-	if m.TopicPartition.Error != nil {
-		helpers.PrintErr(err, "error at delivery Chan")
-	} else {
-		helpers.PrintMsg("message delivered")
+	msg := &sarama.ProducerMessage{
+		Topic:     snap.Topic,
+		Partition: 0,
+		Value:     sarama.ByteEncoder(msgBytes),
+	}
+	_, _, err = snap.Producer.SendMessage(msg)
+	if err != nil {
+		helpers.PrintErr(err, "error sending message to Kafka")
+		return
 	}
 	fmt.Println("completed...")
 	w.WriteHeader(http.StatusOK)

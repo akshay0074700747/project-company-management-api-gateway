@@ -1,11 +1,13 @@
 package companycontrollers
 
 import (
+	"time"
+
+	"github.com/IBM/sarama"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/middleware"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/rediss"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/companypb"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/go-chi/chi"
 	"google.golang.org/grpc"
 )
@@ -18,31 +20,28 @@ type CompanyCtl struct {
 }
 
 type JobProducer struct {
-	Producer     *kafka.Producer
+	Producer     sarama.SyncProducer
+	DeliveryChan chan<- sarama.Message
 	Topic        string
-	DeliveryChan chan kafka.Event
 }
 
 func NewJobProducer(topic string) *JobProducer {
 
-	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "host.docker.internal:9092",
-		"client.id":         "jobApplier-producer",
-		"acks":              "all",
-	}
+	config := sarama.NewConfig()
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Return.Successes = true
+	config.Producer.Retry.Max = 5
+	config.Producer.Retry.Backoff = 50 * time.Millisecond
 
-	producer, err := kafka.NewProducer(configMap)
+	producer, err := sarama.NewSyncProducer([]string{"host.docker.internal:9092"}, config)
 	if err != nil {
-		helpers.PrintErr(err, "errror at creating porducer")
-		return nil
+		helpers.PrintErr(err, "error happeed at creating producer")
 	}
-
-	deliveryChan := make(chan kafka.Event)
 
 	return &JobProducer{
-		Producer:     producer,
 		Topic:        topic,
-		DeliveryChan: deliveryChan,
+		Producer:     producer,
+		DeliveryChan: make(chan<- sarama.Message),
 	}
 }
 

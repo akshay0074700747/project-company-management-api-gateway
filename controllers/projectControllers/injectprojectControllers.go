@@ -1,11 +1,13 @@
 package projectcontrollers
 
 import (
+	"time"
+
+	"github.com/IBM/sarama"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/middleware"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/rediss"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/projectpb"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/go-chi/chi"
 	"google.golang.org/grpc"
 )
@@ -18,31 +20,48 @@ type ProjectCtl struct {
 }
 
 type TaskProducer struct {
-	Producer     *kafka.Producer
+	Producer     sarama.SyncProducer
+	DeliveryChan chan<- sarama.Message
 	Topic        string
-	DeliveryChan chan kafka.Event
 }
 
 func NewTaskProducer(topic string) *TaskProducer {
 
-	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "host.docker.internal:9092",
-		"client.id":         "taskAssignation-producer",
-		"acks":              "all",
-	}
+	// configMap := &kafka.ConfigMap{
+	// 	"bootstrap.servers": "host.docker.internal:9092",
+	// 	"client.id":         "taskAssignation-producer",
+	// 	"acks":              "all",
+	// }
 
-	producer, err := kafka.NewProducer(configMap)
+	// producer, err := kafka.NewProducer(configMap)
+	// if err != nil {
+	// 	helpers.PrintErr(err, "errror at creating porducer")
+	// 	return nil
+	// }
+
+	// deliveryChan := make(chan kafka.Event)
+
+	// return &TaskProducer{
+	// 	Producer:     producer,
+	// 	Topic:        topic,
+	// 	DeliveryChan: deliveryChan,
+	// }
+
+	config := sarama.NewConfig()
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Return.Successes = true
+	config.Producer.Retry.Max = 5
+	config.Producer.Retry.Backoff = 50 * time.Millisecond
+
+	producer, err := sarama.NewSyncProducer([]string{"host.docker.internal:9092"}, config)
 	if err != nil {
-		helpers.PrintErr(err, "errror at creating porducer")
-		return nil
+		helpers.PrintErr(err, "error happeed at creating producer")
 	}
-
-	deliveryChan := make(chan kafka.Event)
 
 	return &TaskProducer{
-		Producer:     producer,
 		Topic:        topic,
-		DeliveryChan: deliveryChan,
+		Producer:     producer,
+		DeliveryChan: make(chan<- sarama.Message),
 	}
 }
 

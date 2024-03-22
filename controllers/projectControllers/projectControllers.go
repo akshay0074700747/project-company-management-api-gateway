@@ -13,7 +13,7 @@ import (
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/projectpb"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/IBM/sarama"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -460,17 +460,28 @@ func (project *ProjectCtl) assignTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = project.TaskAssignator.Producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &project.TaskAssignator.Topic, Partition: 0},
-		Value:          taskBytes,
-	}, project.TaskAssignator.DeliveryChan)
+	// err = project.TaskAssignator.Producer.Produce(&kafka.Message{
+	// 	TopicPartition: kafka.TopicPartition{Topic: &project.TaskAssignator.Topic, Partition: 0},
+	// 	Value:          taskBytes,
+	// }, project.TaskAssignator.DeliveryChan)
 
-	e := <-project.TaskAssignator.DeliveryChan
-	m := e.(*kafka.Message)
-	if m.TopicPartition.Error != nil {
-		helpers.PrintErr(err, "error at delivery Chan")
-	} else {
-		helpers.PrintMsg("message delivered")
+	// e := <-project.TaskAssignator.DeliveryChan
+	// m := e.(*kafka.Message)
+	// if m.TopicPartition.Error != nil {
+	// 	helpers.PrintErr(err, "error at delivery Chan")
+	// } else {
+	// 	helpers.PrintMsg("message delivered")
+	// }
+
+	msg := &sarama.ProducerMessage{
+		Topic:     project.TaskAssignator.Topic,
+		Partition: 0,
+		Value:     sarama.ByteEncoder(taskBytes),
+	}
+	_, _, err = project.TaskAssignator.Producer.SendMessage(msg)
+	if err != nil {
+		helpers.PrintErr(err, "error sending message to Kafka")
+		return
 	}
 
 	var ress Responce

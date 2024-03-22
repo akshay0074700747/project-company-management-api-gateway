@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/userpb"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -81,17 +81,28 @@ func (usr *UserCtl) signupUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = usr.Producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &usr.Topic, Partition: 0},
-			Value:          value,
-		}, usr.DeliveryChan)
+		// err = usr.Producer.Produce(&kafka.Message{
+		// 	TopicPartition: kafka.TopicPartition{Topic: &usr.Topic, Partition: 0},
+		// 	Value:          value,
+		// }, usr.DeliveryChan)
 
-		e := <-usr.DeliveryChan
-		m := e.(*kafka.Message)
-		if m.TopicPartition.Error != nil {
-			helpers.PrintErr(err, "error at delivery Chan")
-		} else {
-			helpers.PrintMsg("message delivered")
+		// e := <-usr.DeliveryChan
+		// m := e.(*kafka.Message)
+		// if m.TopicPartition.Error != nil {
+		// 	helpers.PrintErr(err, "error at delivery Chan")
+		// } else {
+		// 	helpers.PrintMsg("message delivered")
+		// }
+
+		msg := &sarama.ProducerMessage{
+			Topic:     usr.Topic,
+			Partition: 0,
+			Value:     sarama.ByteEncoder(value),
+		}
+		_, _, err = usr.Producer.SendMessage(msg)
+		if err != nil {
+			helpers.PrintErr(err, "error sending message to Kafka")
+			return
 		}
 
 		var res Responce
