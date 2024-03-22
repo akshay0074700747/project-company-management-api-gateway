@@ -6,6 +6,10 @@ COPY . .
 
 RUN go mod download
 
+RUN go mod tidy
+
+RUN go get -u github.com/confluentinc/confluent-kafka-go/kafka
+
 WORKDIR /app/cmd
 
 RUN go build -o api-gateway
