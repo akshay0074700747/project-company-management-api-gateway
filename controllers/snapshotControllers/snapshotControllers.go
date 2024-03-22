@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 type SnapMsg struct {

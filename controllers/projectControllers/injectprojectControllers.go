@@ -5,7 +5,7 @@ import (
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/middleware"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/rediss"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/projectpb"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/go-chi/chi"
 	"google.golang.org/grpc"
 )

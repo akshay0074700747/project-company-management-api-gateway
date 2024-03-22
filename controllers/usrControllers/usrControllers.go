@@ -12,7 +12,7 @@ import (
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	jwtvalidation "github.com/akshay0074700747/projectandCompany_management_api-gateway/jwtValidation"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/userpb"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
