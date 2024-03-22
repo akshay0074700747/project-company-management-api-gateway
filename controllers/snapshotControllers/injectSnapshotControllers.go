@@ -41,7 +41,7 @@ config.Producer.Return.Successes = true
 config.Producer.Retry.Max = 5
 config.Producer.Retry.Backoff = 50 * time.Millisecond
 
-producer, err := sarama.NewSyncProducer([]string{"host.docker.internal:9092"}, config)
+producer, err := sarama.NewSyncProducer([]string{"localhost:9092"}, config)
 if err != nil {
 	helpers.PrintErr(err, "error happeed at creating producer")
 }

@@ -46,7 +46,7 @@ type UserCtl struct {
 // 	}
 // }
 
-func NewUserserviceClient(conn *grpc.ClientConn, secret string, cache *rediss.Cache, topic string) (*UserCtl) {
+func NewUserserviceClient(conn *grpc.ClientConn, secret string, cache *rediss.Cache, topic string) *UserCtl {
 
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
@@ -54,7 +54,7 @@ func NewUserserviceClient(conn *grpc.ClientConn, secret string, cache *rediss.Ca
 	config.Producer.Retry.Max = 5
 	config.Producer.Retry.Backoff = 50 * time.Millisecond
 
-	producer, err := sarama.NewSyncProducer([]string{"host.docker.internal:9092"}, config)
+	producer, err := sarama.NewSyncProducer([]string{"localhost:9092"}, config)
 	if err != nil {
 		helpers.PrintErr(err, "error happeed at creating producer")
 	}

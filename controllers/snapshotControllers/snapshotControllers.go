@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/IBM/sarama"
+	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 )
 
 type SnapMsg struct {
@@ -90,12 +90,12 @@ func (snap *SnapshotCtl) pushSnapshots(w http.ResponseWriter, r *http.Request) {
 		Partition: 0,
 		Value:     sarama.ByteEncoder(msgBytes),
 	}
-	_, _, err = snap.Producer.SendMessage(msg)
+	_, offset, err := snap.Producer.SendMessage(msg)
 	if err != nil {
 		helpers.PrintErr(err, "error sending message to Kafka")
 		return
 	}
-	fmt.Println("completed...")
+	fmt.Println(offset, " completed...")
 	w.WriteHeader(http.StatusOK)
 
 	w.Header().Set("Content-Type", "application/json")
