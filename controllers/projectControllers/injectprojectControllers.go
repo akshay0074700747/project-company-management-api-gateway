@@ -1,10 +1,11 @@
 package projectcontrollers
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/akshay0074700747/projectandCompany_management_api-gateway/helpers"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/middleware"
 	"github.com/akshay0074700747/projectandCompany_management_api-gateway/rediss"
 	"github.com/akshay0074700747/projectandCompany_management_protofiles/pb/projectpb"
@@ -53,9 +54,19 @@ func NewTaskProducer(topic string) *TaskProducer {
 	config.Producer.Retry.Max = 5
 	config.Producer.Retry.Backoff = 50 * time.Millisecond
 
-	producer, err := sarama.NewSyncProducer([]string{"localhost:9092"}, config)
-	if err != nil {
-		helpers.PrintErr(err, "error happeed at creating producer")
+	var producer sarama.SyncProducer
+	var err error
+	for i := 0; i < 8; i++ {
+		producer, err = sarama.NewSyncProducer([]string{"host.docker.internal:29092"}, config)
+		if err != nil {
+			if i == 7 {
+				log.Fatal("Closingg: %v", err)
+			}
+			fmt.Println("Error creating producer : ", i, ": %v", err)
+			time.Sleep(time.Second * 3)
+		} else {
+			break
+		}
 	}
 
 	return &TaskProducer{
