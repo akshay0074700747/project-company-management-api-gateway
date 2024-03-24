@@ -37,7 +37,7 @@ func NewJobProducer(topic string) *JobProducer {
 	var producer sarama.SyncProducer
 	var err error
 	for i := 0; i < 8; i++ {
-		producer, err = sarama.NewSyncProducer([]string{"host.docker.internal:29092"}, config)
+		producer, err = sarama.NewSyncProducer([]string{"apache-kafka-service:9092"}, config)
 		if err != nil {
 			if i == 7 {
 				log.Fatal("Closingg: %v", err)

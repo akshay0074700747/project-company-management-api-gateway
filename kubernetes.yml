@@ -41,10 +41,6 @@ spec:
       containers:
       - name: postgres-database
         image: postgres:14-alpine
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
         envFrom:
         - secretRef:
             name: postgres-secret
@@ -52,25 +48,17 @@ spec:
         - containerPort: 5432
           name: db
         volumeMounts:
-        - name: postgres-data
-          mountPath: /var/lib/postgresql/data
         - name: initdb-script
           mountPath: /docker-entrypoint-initdb.d
-      volumes:  
-        - name: postgres-data
-          persistentVolumeClaim:
-            claimName: postgres-data  
-        - name: initdb-script
-          configMap:
-            name: initdb-config
-  volumeClaimTemplates:  
-    - metadata:
-        name: postgres-data  
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        resources:
-          requests:
-            storage: 200Mi
+      volumes:
+      - name: initdb-script
+        configMap:
+          name: initdb-config
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
 
 ---
 
@@ -105,10 +93,6 @@ spec:
       containers:
       - name: mongo-database
         image: mongo:latest
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
         ports:
         - containerPort: 27017
           name: db
@@ -124,9 +108,6 @@ spec:
         name: mongo-data  
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        resources:
-          requests:
-            storage: 200Mi
 
 ---
 
@@ -161,18 +142,14 @@ spec:
       containers:
       - name: redis-cache
         image: redis:latest
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
         ports:
         - containerPort: 6379
           name: db
+  volumeClaimTemplates:
+    - metadata:
+        name: data
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        resources:
-          requests:
-            storage: 200Mi
 
 ---
 
@@ -207,37 +184,51 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: minio
+      app: minio-database
   serviceName: minio-service
   replicas: 1
   template:
     metadata:
       labels:
-        app: minio
+        app: minio-database
     spec:
       containers:
       - name: minio-database
         image: quay.io/minio/minio:latest
-        entrypoint: [ "/bin/bash", "-c",
-          "set -e;  # Exit on errors
+        command: ["/bin/bash", "-c",
+          "set -e;
 
           buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
 
-          minio='/usr/local/bin/minio';
-
           for bucket in '${buckets[@]}'; do
-            if ! $minio mc bucket exists $bucket; then
-              $minio mc mb $bucket;
+            if ! mc bucket exists $bucket; then
+               mc mb $bucket;
             fi
           done
 
           echo 'Buckets created successfully!'
 
-          minio server /data" ]
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
+          minio server /data"]
+      # command: ["/bin/bash", "-c",
+      #   "set -e; # Exit on errors
+
+      #   # Download MinIO Client binary
+      #   curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc && chmod +x /tmp/mc
+
+      #   # Update path to downloaded mc binary
+      #   mc='/tmp/mc'
+
+      #   buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
+
+      #   for bucket in '${buckets[@]}'; do
+      #   if ! $mc mc bucket exists $bucket; then
+      #   $mc mc mb $bucket;
+      #   fi
+      #   done
+
+      #   echo 'Buckets created successfully!'
+
+      #   minio server /data"]
         envFrom:
         - secretRef:
             name: minio-secret
@@ -248,19 +239,16 @@ spec:
           name: dbtwo
         volumeMounts:
         - name: minio-data
-          mountPath: /data 
-      volumes:  
-        - name: minio-data
-          persistentVolumeClaim:
-            claimName: minio-data
-  volumeClaimTemplates:  
-    - metadata:
-        name: minio-data  
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        resources:
-          requests:
-            storage: 200Mi
+          mountPath: /data
+      volumes:
+      - name: minio-data
+        persistentVolumeClaim:
+          claimName: minio-data
+  volumeClaimTemplates:
+  - metadata:
+      name: minio-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
 
 ---
 
@@ -270,11 +258,13 @@ metadata:
   name: minio-service
 spec:
   selector:
-    app: minio
+    app: minio-service
   ports:
-  - port: 9000
+  - name: minio-port-1
+    port: 9000
     targetPort: 9000
-  - port: 9001
+  - name: minio-port-2
+    port: 9001
     targetPort: 9001
 
 ---
@@ -312,10 +302,6 @@ spec:
         image: confluentinc/cp-zookeeper:7.3.2
         ports:
         - containerPort: 2181
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
         env:
           - name: ZOOKEEPER_CLIENT_PORT
             value: "2181"
@@ -329,18 +315,21 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafka
+  name: apache-kafka-service
 spec:
   selector:
     app: kafka
   ports:
-    - protocol: TCP
+    - name: kafka-port-1
+      protocol: TCP
       port: 9092
       targetPort: 9092
-    - protocol: TCP
+    - name: kafka-port-2
+      protocol: TCP
       port: 29092
       targetPort: 29092
-    - protocol: TCP
+    - name: kafka-port-3
+      protocol: TCP
       port: 9999
       targetPort: 9999
 
@@ -360,51 +349,381 @@ spec:
       labels:
         app: kafka
     spec:
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox
+          command: ['sh', '-c', 'until nc -z zookeeper 2181; do echo waiting for dependencies; sleep 2; done;']
       containers:
-      - name: kafka
-        image: confluentinc/cp-kafka:7.3.2
-        ports:
-        - containerPort: 9092
-        - containerPort: 29092
-        - containerPort: 9999
+        - name: kafka
+          image: confluentinc/cp-kafka:7.3.2
+          ports:
+            - containerPort: 9092
+            - containerPort: 29092
+            - containerPort: 9999
+          env:
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: EXTERNAL://apache-kafka-service:9092,DOCKER://host.docker.internal:29092
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: EXTERNAL
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              value: "zookeeper:2181"
+            - name: KAFKA_BROKER_ID
+              value: "1"
+            - name: KAFKA_LOG4J_LOGGERS
+              value: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "1"
+            - name: KAFKA_JMX_PORT
+              value: "9999"
+            - name: KAFKA_JMX_HOSTNAME
+              value: "${DOCKER_HOST_IP:-127.0.0.1}"
+            - name: KAFKA_AUTHORIZER_CLASS_NAME
+              value: kafka.security.authorizer.AclAuthorizer
+            - name: KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND
+              value: "true"
+            - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
+              value: "true"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: api-gateway
+        image: akshayhere999/project-and-company-management-api-gateway:v0.1.5
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
         resources:
           limits:
             memory: "128Mi"
             cpu: "500m"
-        env:
-          - name: KAFKA_ADVERTISED_LISTENERS
-            value: INTERNAL://kafka:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
-          - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
-            value: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
-          - name: KAFKA_INTER_BROKER_LISTENER_NAME
-            value: INTERNAL
-          - name: KAFKA_ZOOKEEPER_CONNECT
-            value: "zoo:2181"
-          - name: KAFKA_BROKER_ID
-            value: "1"
-          - name: KAFKA_LOG4J_LOGGERS
-            value: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
-          - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-            value: "1"
-          - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
-            value: "1"
-          - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
-            value: "1"
-          - name: KAFKA_JMX_PORT
-            value: "9999"
-          - name: KAFKA_JMX_HOSTNAME
-            value: "${DOCKER_HOST_IP:-127.0.0.1}"
-          - name: KAFKA_AUTHORIZER_CLASS_NAME
-            value: kafka.security.authorizer.AclAuthorizer
-          - name: KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND
-            value: "true"
-          - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
-            value: "true"
-      depends_on:
-        - zookeeper
-
+        ports:
+        - containerPort: 50000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 50000
+    targetPort: 50000
+    nodePort: 30000
+  type: NodePort
 ---
 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+spec:
+  selector:
+    matchLabels:
+      app: auth-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: auth-service
+        image: akshayhere999/project-and-company-management-auth-service:v0.1.0
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 50004
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  selector:
+    app: auth-service
+  type: ClusterIP
+  ports:
+  - port: 50004
+    targetPort: 50004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+spec:
+  selector:
+    matchLabels:
+      app: chat-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: chat-service
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: chat-service
+        image: akshayhere999/project-and-company-management-chat-service:v0.1.1
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 50006
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+spec:
+  selector:
+    app: chat-service
+  type: ClusterIP
+  ports:
+  - port: 50006
+    targetPort: 50006
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: company-service
+spec:
+  selector:
+    matchLabels:
+      app: company-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: company-service
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: company-service
+        image: akshayhere999/project-and-company-management-company-service:v0.1.4
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 50003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: company-service
+spec:
+  selector:
+    app: company-service
+  type: ClusterIP
+  ports:
+  - port: 50003
+    targetPort: 50003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-service
+spec:
+  selector:
+    matchLabels:
+      app: email-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: email-service
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: email-service
+        image: akshayhere999/project-and-company-management-email-service:v0.2.4
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 50008
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: email-service
+spec:
+  selector:
+    app: email-service
+  type: ClusterIP
+  ports:
+  - port: 50008
+    targetPort: 50008
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+spec:
+  selector:
+    matchLabels:
+      app: payment-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: payment-service
+        image: akshayhere999/project-and-company-management-payment-service:v0.1.1
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 50007
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+spec:
+  selector:
+    app: payment-service
+  type: ClusterIP
+  ports:
+  - port: 50007
+    targetPort: 50007
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-service
+spec:
+  selector:
+    matchLabels:
+      app: project-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: project-service
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: project-service
+        image: akshayhere999/project-and-company-management-project-service:v0.1.4
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 50002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: project-service
+spec:
+  selector:
+    app: project-service
+  type: ClusterIP
+  ports:
+  - port: 50002
+    targetPort: 50002
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snapshot-service
+spec:
+  selector:
+    matchLabels:
+      app: snapshot-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: snapshot-service
+    spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+      containers:
+      - name: snapshot-service
+        image: akshayhere999/project-and-company-management-snapshot-service:v0.2.2
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 50005
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapshot-service
+spec:
+  selector:
+    app: snapshot-service
+  type: ClusterIP
+  ports:
+  - port: 50005
+    targetPort: 50005
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -419,189 +738,14 @@ spec:
       labels:
         app: user-service
     spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
       containers:
       - name: user-service
-        image: akshayhere999/user-service:1.1
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-        ports:
-        - containerPort: 50002
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: user-service
-spec:
-  selector:
-    app: user-service
-  type: ClusterIP
-  ports:
-  - port: 50002
-    targetPort: 50002
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: product-service
-spec:
-  selector:
-    matchLabels:
-      app: product-service
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: product-service
-    spec:
-      containers:
-      - name: product-service
-        image: akshayhere999/product-service:1.1
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-        ports:
-        - containerPort: 50004
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: product-service
-spec:
-  selector:
-    app: product-service
-  type: ClusterIP
-  ports:
-  - port: 50004
-    targetPort: 50004
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: wishlist-service
-spec:
-  selector:
-    matchLabels:
-      app: wishlist-service
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: wishlist-service
-    spec:
-      containers:
-      - name: wishlist-service
-        image: akshayhere999/wishlist-service:1.2
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-        ports:
-        - containerPort: 50007
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: wishlist-service
-spec:
-  selector:
-    app: wishlist-service
-  type: ClusterIP
-  ports:
-  - port: 50007
-    targetPort: 50007
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: order-service
-spec:
-  selector:
-    matchLabels:
-      app: order-service
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: order-service
-    spec:
-      containers:
-      - name: order-service
-        image: akshayhere999/order-service:1.2
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-        ports:
-        - containerPort: 50003
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: order-service
-spec:
-  selector:
-    app: order-service
-  type: ClusterIP
-  ports:
-  - port: 50003
-    targetPort: 50003
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: cart-service
-spec:
-  selector:
-    matchLabels:
-      app: cart-service
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: cart-service
-    spec:
-      containers:
-      - name: cart-service
-        image: akshayhere999/cart-service:1.2
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-        ports:
-        - containerPort: 50006
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: cart-service
-spec:
-  selector:
-    app: cart-service
-  type: ClusterIP
-  ports:
-  - port: 50006
-    targetPort: 50006
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: client-connect
-spec:
-  selector:
-    matchLabels:
-      app: client-connect
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: client-connect
-    spec:
-      containers:
-      - name: client-connect
-        image: akshayhere999/client-connect:1.2
+        image: akshayhere999/project-and-company-management-user-service:v0.1.1
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
         resources:
           limits:
             memory: "128Mi"
@@ -612,13 +756,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: client-connect
+  name: user-service
 spec:
   selector:
-    app: client-connect
+    app: user-service
+  type: ClusterIP
   ports:
   - port: 50001
     targetPort: 50001
-    nodePort: 30001
-  type: NodePort
----

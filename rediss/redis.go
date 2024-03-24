@@ -20,26 +20,11 @@ func NewCache(client *redis.Client) *Cache {
 func NewRedis() *redis.Client {
 	// Connect to Redis
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "host.docker.internal:6379", // Redis server address
-		Password: "",               // No password set
-		DB:       0,                // Use default DB
+		Addr:     "redis-service:6379",
+		Password: "",
+		DB:       0,
 	})
 
-	// Example: Caching data
-	// key := "somekey"
-	// data, err := getDataFromCache(rdb, key)
-	// if err != nil {
-	//     // If data not found in cache, retrieve it and cache it
-	//     data = fetchDataFromDatabase()
-
-	//     // Cache the data for future use
-	//     err := cacheData(rdb, key, data, 10*time.Minute) // Cache data for 10 minutes
-	//     if err != nil {
-	//         fmt.Println("Error caching data:", err)
-	//     }
-	// }
-
-	// fmt.Println("Data:", data)
 
 	return rdb
 }
