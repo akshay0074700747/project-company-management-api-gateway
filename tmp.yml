@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: akshayhere999/project-and-company-management-api-gateway:v0.2.0
+        image: akshayhere999/project-and-company-management-api-gateway:v0.2.1
         # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
         resources:
           limits:
