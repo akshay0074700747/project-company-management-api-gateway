@@ -583,7 +583,11 @@ func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", "http://payment-service:50007/subscription/plan/subscribe/order/pay", r.Body)
+	orderID := r.URL.Query().Get("orderID")
+
+	url := fmt.Sprintf("http://payment-service:50007/subscription/plan/subscribe/order/pay?orderID=%s", orderID)
+
+	req, err := http.NewRequest("GET", url, r.Body)
 	if err != nil {
 		helpers.PrintErr(err, "eroror happenend at proxying the request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -591,6 +595,7 @@ func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Header = r.Header
+	req.URL.Query()
 	res, err := client.Do(req)
 	if err != nil {
 		helpers.PrintErr(err, "error happenedat getting all subscriptions")
@@ -650,7 +655,12 @@ func (usr *UserCtl) verifyPayment(w http.ResponseWriter, r *http.Request) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", "http://payment-service:50007/verify/payment", r.Body)
+	payment_ref := r.URL.Query().Get("payment_ref")
+	order_id := r.URL.Query().Get("order_id")
+
+	url := fmt.Sprintf("http://payment-service:50007/verify/payment?payment_ref=%s&order_id=%s", payment_ref, order_id)
+
+	req, err := http.NewRequest("GET", url, r.Body)
 	if err != nil {
 		helpers.PrintErr(err, "eroror happenend at proxying the request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
