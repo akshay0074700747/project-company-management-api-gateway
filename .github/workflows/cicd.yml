@@ -33,4 +33,4 @@ jobs:
         with:
           context:  .
           push: true
-          tags: akshayhere999/project-and-company-management-api-gateway:v0.1.6
+          tags: akshayhere999/project-and-company-management-api-gateway:v0.1.7

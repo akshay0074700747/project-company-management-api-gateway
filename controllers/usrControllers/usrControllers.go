@@ -462,7 +462,7 @@ func (usr *UserCtl) getSubscriptionPlans(w http.ResponseWriter, r *http.Request)
 	}
 
 	var jsonData = make([]byte, res.ContentLength)
-	if _, err := res.Body.Read(jsonData); err != nil {
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
 		helpers.PrintErr(err, "error happenedat marshaling to json")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -566,7 +566,7 @@ func (usr *UserCtl) getSubscriptions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var jsonData = make([]byte, res.ContentLength)
-	if _, err := res.Body.Read(jsonData); err != nil {
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
 		helpers.PrintErr(err, "error happenedat marshaling to json")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -599,7 +599,7 @@ func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var jsonData = make([]byte, res.ContentLength)
-	if _, err := res.Body.Read(jsonData); err != nil {
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
 		helpers.PrintErr(err, "error happenedat marshaling to json")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -666,7 +666,7 @@ func (usr *UserCtl) verifyPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var jsonData = make([]byte, res.ContentLength)
-	if _, err := res.Body.Read(jsonData); err != nil {
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
 		helpers.PrintErr(err, "error happenedat marshaling to json")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -700,7 +700,7 @@ func (usr *UserCtl) verifiedPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var jsonData = make([]byte, res.ContentLength)
-	if _, err := res.Body.Read(jsonData); err != nil {
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
 		helpers.PrintErr(err, "error happenedat marshaling to json")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
