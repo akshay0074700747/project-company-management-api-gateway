@@ -425,7 +425,7 @@ spec:
         command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 30; echo "Starting now..."']
       containers:
       - name: api-gateway
-        image: akshayhere999/project-and-company-management-api-gateway:v0.1.9
+        image: akshayhere999/project-and-company-management-api-gateway:v0.2.0
         # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
         resources:
           limits:
@@ -637,7 +637,7 @@ spec:
         command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 30; echo "Starting now..."']
       containers:
       - name: payment-service
-        image: akshayhere999/project-and-company-management-payment-service:v0.1.2
+        image: akshayhere999/project-and-company-management-payment-service:v0.1.4
         # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
         resources:
           limits:

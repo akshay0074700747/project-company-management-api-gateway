@@ -596,25 +596,25 @@ func (usr *UserCtl) pay(w http.ResponseWriter, r *http.Request) {
 
 	req.Header = r.Header
 	req.URL.Query()
-	_, err = client.Do(req)
-	if err != nil {
+	res, err := client.Do(req)
+	if err != nil || res == nil {
 		helpers.PrintErr(err, "error happenedat getting all subscriptions")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// var jsonData = make([]byte, res.ContentLength)
-	// if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
-	// 	helpers.PrintErr(err, "error happenedat marshaling to json")
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	var jsonData = make([]byte, res.ContentLength)
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 
-	// w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
-	// w.Write(jsonData)
+	w.Write(jsonData)
 	// client := &http.Client{}
 	// req, err := http.NewRequest("POST", "http://localhost:50007/subscription/plan/subscribe/order/pay", r.Body)
 	// if err != nil {
@@ -668,25 +668,25 @@ func (usr *UserCtl) verifyPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Header = r.Header
-	_, err = client.Do(req)
-	if err != nil {
+	res, err := client.Do(req)
+	if err != nil || res == nil {
 		helpers.PrintErr(err, "error happenedat getting all subscriptions")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// var jsonData = make([]byte, res.ContentLength)
-	// if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
-	// 	helpers.PrintErr(err, "error happenedat marshaling to json")
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	var jsonData = make([]byte, res.ContentLength)
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 
-	// w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
-	// w.Write(jsonData)
+	w.Write(jsonData)
 
 }
 
@@ -702,25 +702,25 @@ func (usr *UserCtl) verifiedPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Header = r.Header
-	_, err = client.Do(req)
-	if err != nil {
+	res, err := client.Do(req)
+	if err != nil || res == nil {
 		helpers.PrintErr(err, "error happenedat getting all subscriptions")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// var jsonData = make([]byte, res.ContentLength)
-	// if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
-	// 	helpers.PrintErr(err, "error happenedat marshaling to json")
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	var jsonData = make([]byte, res.ContentLength)
+	if _, err := res.Body.Read(jsonData); err != nil && err != io.EOF {
+		helpers.PrintErr(err, "error happenedat marshaling to json")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 
-	// w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
-	// w.Write(jsonData)
+	w.Write(jsonData)
 }
 
 func (usr *UserCtl) getAllPayments(w http.ResponseWriter, r *http.Request) {
