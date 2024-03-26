@@ -85,7 +85,7 @@ func NewProjectCtl(conn *grpc.ClientConn, taskAssignator *TaskProducer, secret s
 	}
 }
 
-func (proj *ProjectCtl) InjectProjectControllers(r *chi.Mux) {
+func (proj *ProjectCtl) InjectProjectControllers(r *chi.Mux) {   
 	r.Post("/project/create", middleware.ValidationMiddlewareClients(proj.createProject))
 	r.Post("/project/members/add", middleware.ValidationMiddlewareClients(proj.ProjectMiddleware(proj.addMembers)))
 	r.Get("/project/invites", middleware.ValidationMiddlewareClients(proj.projectInvites))

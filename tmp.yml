@@ -1,76 +1,29 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-  name: minio-database
+  name: email-service
 spec:
   selector:
     matchLabels:
-      app: minio-database
-  serviceName: minio-service
+      app: email-service
   replicas: 1
   template:
     metadata:
       labels:
-        app: minio-database
+        app: email-service
     spec:
+      initContainers:
+      - name: wait-for-dependencies
+        image: busybox
+        # command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
+        command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 30; echo "Starting now..."']
       containers:
-      - name: minio-database
-        image: quay.io/minio/minio:latest
-        command: ["/bin/bash", "-c", "set -e; buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket); for bucket in '${buckets[@]}'; do mc mb $bucket; done; echo 'Buckets created successfully!'; minio server /data"]
-        # command: ["/bin/bash", "-c",
-        #   "set -e;
-
-        #   buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
-
-        #   for bucket in '${buckets[@]}'; do
-        #     if ! mc bucket exists $bucket; then
-        #        mc mb $bucket;
-        #     fi
-        #   done
-
-        #   echo 'Buckets created successfully!'
-
-        #   minio server /data"]
-      # command: ["/bin/bash", "-c",
-      #   "set -e; # Exit on errors
-
-      #   # Download MinIO Client binary
-      #   curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc && chmod +x /tmp/mc
-
-      #   # Update path to downloaded mc binary
-      #   mc='/tmp/mc'
-
-      #   buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
-
-      #   for bucket in '${buckets[@]}'; do
-      #   if ! $mc mc bucket exists $bucket; then
-      #   $mc mc mb $bucket;
-      #   fi
-      #   done
-
-      #   echo 'Buckets created successfully!'
-
-      #   minio server /data"]
-        envFrom:
-        - secretRef:
-            name: minio-secret
+      - name: email-service
+        image: akshayhere999/project-and-company-management-email-service:v0.2.6
+        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
+        resources:
+          limits:
+            memory: "50Mi"
+            cpu: "50m"
         ports:
-        - containerPort: 9000
-          name: dbone
-        - containerPort: 9001
-          name: dbtwo
-        volumeMounts:
-        - name: minio-data
-          mountPath: /data
-      volumes:
-      - name: minio-data
-        persistentVolumeClaim:
-          claimName: minio-data
-  volumeClaimTemplates:
-  - metadata:
-      name: minio-data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-          requests:
-            storage: 50Mi
+        - containerPort: 50008
