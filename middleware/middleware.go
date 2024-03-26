@@ -62,12 +62,12 @@ func ValidationMiddlewareClients(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		defer func() {
-			if r := recover(); r != nil {
-				http.Error(w, "You do not have the authority to do this operation", http.StatusBadRequest)
-				return
-			}
-		}()
+		// defer func() {
+		// 	if r := recover(); r != nil {
+		// 		http.Error(w, "You do not have the authority to do this operation", http.StatusBadRequest)
+		// 		return
+		// 	}
+		// }()
 		var ctx = r.Context()
 
 		cookie, err := r.Cookie("authentication")
