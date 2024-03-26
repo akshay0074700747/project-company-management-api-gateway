@@ -1,29 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: email-service
+  name: nginx
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: email-service
-  replicas: 1
+      app: nginx
   template:
     metadata:
       labels:
-        app: email-service
+        app: nginx
     spec:
-      initContainers:
-      - name: wait-for-dependencies
-        image: busybox
-        # command: ['sh', '-c', 'until (nc -z apache-kafka-service 9092 && nc -z minio-service 9000 && nc -z redis-service 6379 && nc -z mongo-service 27017 && nc -z postgres-service 5432); do echo "Waiting for dependencies..."; sleep 2; done; echo "All dependencies are ready!"']
-        command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 30; echo "Starting now..."']
       containers:
-      - name: email-service
-        image: akshayhere999/project-and-company-management-email-service:v0.2.6
-        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
-        resources:
-          limits:
-            memory: "50Mi"
-            cpu: "50m"
+      - name: nginx
+        image: nginx:latest
         ports:
-        - containerPort: 50008
+        - containerPort: 80
+        - containerPort: 443
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nginx
+        - name: tls
+          mountPath: /etc/nginx/ssl
+      volumes:
+      - name: config
+        configMap:
+          name: nginx-config
+      - name: tls
+        secret:
+          secretName: tls-secret
