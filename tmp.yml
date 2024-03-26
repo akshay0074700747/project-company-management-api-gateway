@@ -1,24 +1,76 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: payment-service
+  name: minio-database
 spec:
   selector:
     matchLabels:
-      app: payment-service
+      app: minio-database
+  serviceName: minio-service
   replicas: 1
   template:
     metadata:
       labels:
-        app: payment-service
+        app: minio-database
     spec:
       containers:
-      - name: payment-service
-        image: akshayhere999/project-and-company-management-payment-service:v0.2.2
-        # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
-        resources:
-          limits:
-            memory: "50Mi"
-            cpu: "50m"
+      - name: minio-database
+        image: quay.io/minio/minio:latest
+        command: ["/bin/bash", "-c", "set -e; buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket); for bucket in '${buckets[@]}'; do mc mb $bucket; done; echo 'Buckets created successfully!'; minio server /data"]
+        # command: ["/bin/bash", "-c",
+        #   "set -e;
+
+        #   buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
+
+        #   for bucket in '${buckets[@]}'; do
+        #     if ! mc bucket exists $bucket; then
+        #        mc mb $bucket;
+        #     fi
+        #   done
+
+        #   echo 'Buckets created successfully!'
+
+        #   minio server /data"]
+      # command: ["/bin/bash", "-c",
+      #   "set -e; # Exit on errors
+
+      #   # Download MinIO Client binary
+      #   curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc && chmod +x /tmp/mc
+
+      #   # Update path to downloaded mc binary
+      #   mc='/tmp/mc'
+
+      #   buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
+
+      #   for bucket in '${buckets[@]}'; do
+      #   if ! $mc mc bucket exists $bucket; then
+      #   $mc mc mb $bucket;
+      #   fi
+      #   done
+
+      #   echo 'Buckets created successfully!'
+
+      #   minio server /data"]
+        envFrom:
+        - secretRef:
+            name: minio-secret
         ports:
-        - containerPort: 50007
+        - containerPort: 9000
+          name: dbone
+        - containerPort: 9001
+          name: dbtwo
+        volumeMounts:
+        - name: minio-data
+          mountPath: /data
+      volumes:
+      - name: minio-data
+        persistentVolumeClaim:
+          claimName: minio-data
+  volumeClaimTemplates:
+  - metadata:
+      name: minio-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+          requests:
+            storage: 50Mi

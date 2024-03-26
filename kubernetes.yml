@@ -204,20 +204,21 @@ spec:
       containers:
       - name: minio-database
         image: quay.io/minio/minio:latest
-        command: ["/bin/bash", "-c",
-          "set -e;
+        command: ["/bin/bash", "-c", "set -e; buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket); for bucket in '${buckets[@]}'; do mc mb $bucket; done; echo 'Buckets created successfully!'; minio server /data"]
+        # command: ["/bin/bash", "-c",
+        #   "set -e;
 
-          buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
+        #   buckets=(snapshots-storage-bucket resume-storage-bucket tasks-storage-bucket);
 
-          for bucket in '${buckets[@]}'; do
-            if ! mc bucket exists $bucket; then
-               mc mb $bucket;
-            fi
-          done
+        #   for bucket in '${buckets[@]}'; do
+        #     if ! mc bucket exists $bucket; then
+        #        mc mb $bucket;
+        #     fi
+        #   done
 
-          echo 'Buckets created successfully!'
+        #   echo 'Buckets created successfully!'
 
-          minio server /data"]
+        #   minio server /data"]
       # command: ["/bin/bash", "-c",
       #   "set -e; # Exit on errors
 
@@ -425,7 +426,7 @@ spec:
         command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 30; echo "Starting now..."']
       containers:
       - name: api-gateway
-        image: akshayhere999/project-and-company-management-api-gateway:v0.2.1
+        image: akshayhere999/project-and-company-management-api-gateway:v0.2.2
         # command: ['sh', '-c', 'echo "Waiting for all the services to get started..."; sleep 20; echo "Starting now..."']
         resources:
           limits:

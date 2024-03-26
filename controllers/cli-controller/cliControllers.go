@@ -1,6 +1,7 @@
 package clicontroller
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -59,6 +60,8 @@ var (
 
 func (cli *CliCtl) getDownloads(w http.ResponseWriter, r *http.Request) {
 
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
 	input := &s3.ListObjectsInput{
 		Bucket: aws.String(cli.BucketName),
 	}
@@ -96,6 +99,8 @@ func (cli *CliCtl) getDownloads(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cli *CliCtl) downloadCli(w http.ResponseWriter, r *http.Request) {
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	objKey := r.URL.Query().Get("objectKey")
 
